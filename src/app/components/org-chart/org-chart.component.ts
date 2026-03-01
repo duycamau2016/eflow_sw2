@@ -53,12 +53,19 @@ export class OrgChartComponent implements OnChanges {
       : this.availablePositions;
   }
 
-  // Pan state
+  // Pan state (mouse)
   isPanning = false;
   private panStartX = 0;
   private panStartY = 0;
   private panScrollLeft = 0;
   private panScrollTop = 0;
+
+  // Touch state (mobile)
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchScrollLeft = 0;
+  private touchScrollTop = 0;
+  private lastPinchDist = 0;
 
   constructor(
     private dialog: MatDialog,
@@ -290,6 +297,48 @@ export class OrgChartComponent implements OnChanges {
 
   onPanEnd(): void {
     this.isPanning = false;
+  }
+
+  // -------------------------------------------------------
+  // Touch: swipe-pan (1 finger) + pinch-to-zoom (2 fingers)
+  // -------------------------------------------------------
+  onTouchStart(event: TouchEvent): void {
+    const wrapper = this.chartWrapperRef?.nativeElement;
+    if (!wrapper) return;
+    if (event.touches.length === 1) {
+      this.touchStartX = event.touches[0].clientX;
+      this.touchStartY = event.touches[0].clientY;
+      this.touchScrollLeft = wrapper.scrollLeft;
+      this.touchScrollTop = wrapper.scrollTop;
+      this.lastPinchDist = 0;
+    } else if (event.touches.length === 2) {
+      const dx = event.touches[0].clientX - event.touches[1].clientX;
+      const dy = event.touches[0].clientY - event.touches[1].clientY;
+      this.lastPinchDist = Math.sqrt(dx * dx + dy * dy);
+    }
+  }
+
+  onTouchMove(event: TouchEvent): void {
+    const wrapper = this.chartWrapperRef?.nativeElement;
+    if (!wrapper) return;
+    if (event.touches.length === 1 && this.lastPinchDist === 0) {
+      // Single-finger pan — let CSS touch-action handle it natively
+    } else if (event.touches.length === 2 && this.lastPinchDist > 0) {
+      event.preventDefault();
+      const dx = event.touches[0].clientX - event.touches[1].clientX;
+      const dy = event.touches[0].clientY - event.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const delta = (dist - this.lastPinchDist) * 0.006;
+      this.zoomLevel = Math.min(
+        this.MAX_ZOOM,
+        Math.max(this.MIN_ZOOM, +(this.zoomLevel + delta).toFixed(2))
+      );
+      this.lastPinchDist = dist;
+    }
+  }
+
+  onTouchEnd(): void {
+    this.lastPinchDist = 0;
   }
 
   // -------------------------------------------------------

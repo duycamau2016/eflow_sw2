@@ -5,7 +5,7 @@
       <mat-icon>search</mat-icon>
       <input
         type="text"
-        placeholder="Tìm kiếm nhân viên, phòng ban, chức vụ..."
+        placeholder="Tìm kiếm nhân viên, phòng ban..."
         [(ngModel)]="searchQuery"
         (input)="onSearch()"
       />
@@ -154,7 +154,8 @@
   </div>
   <div class="search-result-bar hint-bar" *ngIf="!searchQuery">
     <mat-icon>touch_app</mat-icon>
-    Click vào node để xem chi tiết · Cuộn để xem toàn bộ sơ đồ · <span class="hint-desktop">Ctrl + Wheel để zoom</span>
+    <span class="hint-desktop">Click vào node để xem chi tiết · Cuộn để xem toàn bộ sơ đồ · Ctrl + Wheel để zoom</span>
+    <span class="hint-mobile">Chạm để xem chi tiết · Vuốt để cuộn · Chụm để zoom</span>
   </div>
 
   <!-- Chart canvas -->
@@ -166,6 +167,9 @@
     (mouseup)="onPanEnd()"
     (mouseleave)="onPanEnd()"
     (wheel)="onWheel($event)"
+    (touchstart)="onTouchStart($event)"
+    (touchmove)="onTouchMove($event)"
+    (touchend)="onTouchEnd()"
     [class.panning]="isPanning"
   >
     <div

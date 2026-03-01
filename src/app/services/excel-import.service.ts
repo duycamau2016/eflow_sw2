@@ -362,4 +362,35 @@ export class ExcelImportService {
     this.employeesSubject.next([]);
     this.orgTreeSubject.next([]);
   }
+
+  addEmployee(emp: Employee): void {
+    const current = this.employeesSubject.getValue();
+    const updated = [...current, emp];
+    const tree = this.buildOrgTree(updated);
+    this.employeesSubject.next(updated);
+    this.orgTreeSubject.next(tree);
+  }
+
+  updateEmployee(emp: Employee): void {
+    const current = this.employeesSubject.getValue();
+    const updated = current.map(e => e.id === emp.id ? { ...emp, projects: emp.projects ?? e.projects } : e);
+    const tree = this.buildOrgTree(updated);
+    this.employeesSubject.next(updated);
+    this.orgTreeSubject.next(tree);
+  }
+
+  deleteEmployee(id: string): void {
+    const current = this.employeesSubject.getValue();
+    // Remove employee + clear their managerId from subordinates
+    const updated = current
+      .filter(e => e.id !== id)
+      .map(e => e.managerId === id ? { ...e, managerId: null } : e);
+    const tree = this.buildOrgTree(updated);
+    this.employeesSubject.next(updated);
+    this.orgTreeSubject.next(tree);
+  }
+
+  getEmployees(): Employee[] {
+    return this.employeesSubject.getValue();
+  }
 }

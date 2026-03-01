@@ -1,0 +1,285 @@
+<div class="pm-container">
+
+  <!-- Left panel: project list -->
+  <div class="pm-sidebar">
+    <div class="pm-sidebar-header">
+      <h2><mat-icon>folder_special</mat-icon> Quản lý Dự án</h2>
+      <span class="proj-count">{{ projects.length }} dự án</span>
+    </div>
+
+    <!-- Search + filter -->
+    <div class="pm-search-bar">
+      <div class="pm-search-input">
+        <mat-icon>search</mat-icon>
+        <input
+          type="text"
+          placeholder="Tìm dự án..."
+          [(ngModel)]="searchQuery"
+          (input)="applyProjectFilter()"
+        />
+      </div>
+      <div class="pm-status-tabs">
+        <button
+          *ngFor="let s of [
+            {val:'all',label:'Tất cả'},
+            {val:'active',label:'Đang thực hiện'},
+            {val:'pending',label:'Chờ'},
+            {val:'completed',label:'Hoàn thành'}
+          ]"
+          class="status-tab"
+          [class.active]="statusFilter === s.val"
+          (click)="statusFilter = s.val; applyProjectFilter()"
+        >{{ s.label }}</button>
+      </div>
+    </div>
+
+    <!-- Project list -->
+    <div class="pm-project-list">
+      <div
+        *ngFor="let proj of filteredProjects"
+        class="pm-project-card"
+        [class.selected]="selectedProject?.id === proj.id"
+        (click)="selectProject(proj)"
+      >
+        <div class="ppc-top">
+          <span class="ppc-name">{{ proj.name }}</span>
+          <span class="ppc-status" [class]="getStatusClass(proj.status)">
+            {{ statusLabel[proj.status] }}
+          </span>
+        </div>
+        <div class="ppc-meta">
+          <mat-icon>people</mat-icon>
+          <span>{{ proj.memberCount }} thành viên</span>
+        </div>
+      </div>
+
+      <div class="pm-empty-list" *ngIf="filteredProjects.length === 0">
+        <mat-icon>search_off</mat-icon>
+        <p>Không tìm thấy dự án</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel: project detail -->
+  <div class="pm-detail" *ngIf="selectedProject; else noSelection">
+
+    <!-- Detail header -->
+    <div class="pm-detail-header">
+      <div class="pdh-title">
+        <mat-icon class="pdh-icon">work</mat-icon>
+        <div>
+          <h2>{{ selectedProject.name }}</h2>
+          <span class="pdh-badge" [class]="getStatusClass(selectedProject.status)">
+            {{ statusLabel[selectedProject.status] }}
+          </span>
+        </div>
+      </div>
+      <div class="pdh-stats">
+        <div class="pdh-stat">
+          <mat-icon>people</mat-icon>
+          <span>{{ selectedProject.memberCount }} thành viên</span>
+        </div>
+        <div class="pdh-stat">
+          <mat-icon>account_tree</mat-icon>
+          <span>{{ projectTree.length }} nhánh gốc</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Member search + zoom controls -->
+    <div class="pm-member-search">
+      <mat-icon>person_search</mat-icon>
+      <input
+        type="text"
+        placeholder="Tìm thành viên, chức vụ, vai trò..."
+        [(ngModel)]="memberSearch"
+        (input)="onMemberSearchChange()"
+      />
+      <mat-icon *ngIf="memberSearch" class="clear-icon" (click)="memberSearch=''">close</mat-icon>
+
+      <!-- View toggle -->
+      <div class="pm-view-toggle">
+        <button mat-icon-button
+          [class.active]="viewMode === 'tree'"
+          (click)="viewMode = 'tree'"
+          title="Sơ đồ cây">
+          <mat-icon>account_tree</mat-icon>
+        </button>
+        <button mat-icon-button
+          [class.active]="viewMode === 'table'"
+          (click)="viewMode = 'table'"
+          title="Danh sách bảng">
+          <mat-icon>table_rows</mat-icon>
+        </button>
+      </div>
+
+      <!-- Zoom controls (tree only) -->
+      <div class="pm-zoom-controls" *ngIf="viewMode === 'tree'">
+        <button mat-icon-button title="Thu nhỏ" (click)="zoomOut()" [disabled]="zoomLevel <= MIN_ZOOM">
+          <mat-icon>zoom_out</mat-icon>
+        </button>
+        <button mat-stroked-button class="zoom-label" (click)="resetZoom()">{{ zoomPercent }}%</button>
+        <button mat-icon-button title="Phóng to" (click)="zoomIn()" [disabled]="zoomLevel >= MAX_ZOOM">
+          <mat-icon>zoom_in</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Member tree (org-chart style) -->
+    <div class="pm-member-tree"
+      *ngIf="viewMode === 'tree'"
+      #treeWrapper
+      (wheel)="onWheel($event)"
+      (touchstart)="onTouchStart($event)"
+      (touchmove)="onTouchMove($event)"
+      (touchend)="onTouchEnd()"
+    >
+      <div *ngIf="filteredProjectTree.length === 0" class="pm-tree-empty">
+        <mat-icon>search_off</mat-icon>
+        <p>Không tìm thấy thành viên</p>
+      </div>
+      <div class="pm-tree-zoom-inner" [style.zoom]="zoomLevel" *ngIf="filteredProjectTree.length > 0">
+        <div class="pm-roots-container">
+          <ng-container *ngFor="let member of filteredProjectTree">
+            <ng-container *ngTemplateOutlet="memberNode; context: { $implicit: member }"></ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Member table view -->
+    <div class="pm-member-table-wrap" *ngIf="viewMode === 'table'">
+      <div *ngIf="flatFilteredMembers.length === 0" class="pm-tree-empty">
+        <mat-icon>search_off</mat-icon>
+        <p>Không tìm thấy thành viên</p>
+      </div>
+      <table class="pm-table" *ngIf="flatFilteredMembers.length > 0">
+        <thead>
+          <tr>
+            <th class="col-idx">#</th>
+            <th class="col-name">Họ và tên</th>
+            <th class="col-position">Chức vụ</th>
+            <th class="col-dept">Phòng ban</th>
+            <th class="col-role">Vai trò dự án</th>
+            <th class="col-start">Ngày bắt đầu</th>
+            <th class="col-end">Ngày kết thúc</th>
+            <th class="col-status">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of pagedMembers; let i = index">
+            <td class="col-idx">{{ tablePage * tablePageSize + i + 1 }}</td>
+            <td class="col-name">
+              <div class="ptbl-name-cell">
+                <div class="ptbl-avatar" [style.background]="getAvatarColor(m.employee.name)">
+                  {{ getInitials(m.employee.name) }}
+                </div>
+                <span>{{ m.employee.name }}</span>
+              </div>
+            </td>
+            <td class="col-position">{{ m.employee.position }}</td>
+            <td class="col-dept">{{ m.employee.department || '—' }}</td>
+            <td class="col-role"><span class="pm-node-role">{{ m.role || 'Thành viên' }}</span></td>
+            <td class="col-start">{{ m.startDate || '—' }}</td>
+            <td class="col-end">{{ m.endDate || '—' }}</td>
+            <td class="col-status">
+              <span class="pm-node-status" [class]="getStatusClass(m.status)">
+                {{ statusLabel[m.status] }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table pagination -->
+    <div class="pm-table-pagination" *ngIf="viewMode === 'table' && flatFilteredMembers.length > tablePageSize">
+      <span class="ptp-info">
+        {{ tablePage * tablePageSize + 1 }}–{{ tableEndIndex }}
+        / {{ flatFilteredMembers.length }} thành viên
+      </span>
+      <div class="ptp-controls">
+        <button mat-icon-button class="ptp-btn" (click)="tableGoTo(0)" [disabled]="tablePage === 0" title="Trang đầu">
+          <mat-icon>first_page</mat-icon>
+        </button>
+        <button mat-icon-button class="ptp-btn" (click)="tableGoTo(tablePage - 1)" [disabled]="tablePage === 0" title="Trang trước">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button
+          *ngFor="let p of tablePageNumbers"
+          class="ptp-page-btn"
+          [class.active]="p === tablePage"
+          (click)="tableGoTo(p)"
+        >{{ p + 1 }}</button>
+        <button mat-icon-button class="ptp-btn" (click)="tableGoTo(tablePage + 1)" [disabled]="tablePage >= totalTablePages - 1" title="Trang sau">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button mat-icon-button class="ptp-btn" (click)="tableGoTo(totalTablePages - 1)" [disabled]="tablePage >= totalTablePages - 1" title="Trang cuối">
+          <mat-icon>last_page</mat-icon>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /pm-detail -->
+
+  <!-- No selection placeholder -->
+  <ng-template #noSelection>
+    <div class="pm-no-selection">
+      <mat-icon>folder_open</mat-icon>
+      <p>Chọn một dự án để xem danh sách thành viên</p>
+    </div>
+  </ng-template>
+
+</div>
+
+<!-- Recursive org-chart style member node -->
+<ng-template #memberNode let-member>
+  <div class="pm-node-wrapper">
+
+    <!-- Card -->
+    <div class="pm-node-card" [ngClass]="'level-' + member.employee.level">
+
+      <!-- Avatar -->
+      <div class="pm-node-avatar" [style.background]="getAvatarColor(member.employee.name)">
+        {{ getInitials(member.employee.name) }}
+      </div>
+
+      <!-- Info -->
+      <div class="pm-node-info">
+        <div class="pm-node-name">{{ member.employee.name }}</div>
+        <div class="pm-node-position">{{ member.employee.position }}</div>
+        <div class="pm-node-dept" *ngIf="member.employee.department">{{ member.employee.department }}</div>
+      </div>
+
+      <!-- Role + status -->
+      <div class="pm-node-stats">
+        <span class="pm-node-role">{{ member.role || 'Thành viên' }}</span>
+        <span class="pm-node-status" [class]="getStatusClass(member.status)">
+          {{ statusLabel[member.status] }}
+        </span>
+      </div>
+
+      <!-- Expand button -->
+      <button
+        *ngIf="member.children.length > 0"
+        class="pm-expand-btn"
+        (click)="toggleNode(member, $event)"
+        [title]="isNodeExpanded(member) ? 'Thu gọn' : 'Mở rộng'"
+      >
+        <mat-icon>{{ isNodeExpanded(member) ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Children with connector lines -->
+    <div class="pm-node-children" *ngIf="member.children.length > 0 && isNodeExpanded(member)">
+      <div class="pm-children-connector"></div>
+      <div class="pm-children-row">
+        <div class="pm-child-branch" *ngFor="let child of member.children">
+          <div class="pm-branch-line"></div>
+          <ng-container *ngTemplateOutlet="memberNode; context: { $implicit: child }"></ng-container>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</ng-template>

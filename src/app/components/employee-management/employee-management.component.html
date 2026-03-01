@@ -1,0 +1,378 @@
+<div class="em-root">
+
+  <!-- ══════════════ MAIN LIST PANEL ══════════════ -->
+  <div class="em-main">
+
+    <!-- Header toolbar -->
+    <div class="em-header">
+      <div class="em-header-top">
+        <h2><mat-icon>manage_accounts</mat-icon> Quản lý Nhân sự</h2>
+        <button mat-flat-button color="primary" class="em-add-btn" (click)="openCreate()">
+          <mat-icon>person_add</mat-icon> Thêm nhân viên
+        </button>
+      </div>
+
+      <!-- Search + filter row -->
+      <div class="em-filter-row">
+        <div class="em-search-input">
+          <mat-icon>search</mat-icon>
+          <input
+            type="text"
+            placeholder="Tìm tên, mã NV, chức vụ, email..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearch()"
+          />
+          <mat-icon class="clear-icon" *ngIf="searchQuery" (click)="searchQuery=''; onSearch()">close</mat-icon>
+        </div>
+
+        <div class="em-dept-filter">
+          <mat-icon>business</mat-icon>
+          <select [(ngModel)]="deptFilter" (change)="page = 0">
+            <option value="all">Tất cả phòng ban</option>
+            <option *ngFor="let d of departments" [value]="d">{{ d }}</option>
+          </select>
+        </div>
+
+        <div class="em-stats-chips">
+          <span class="em-chip"><mat-icon>people</mat-icon>{{ filteredEmployees.length }} / {{ allEmployees.length }}</span>
+          <span class="em-chip"><mat-icon>business</mat-icon>{{ departments.length }} phòng ban</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table area -->
+    <div class="em-table-wrap">
+      <div class="em-empty" *ngIf="filteredEmployees.length === 0">
+        <mat-icon>search_off</mat-icon>
+        <p>Không tìm thấy nhân viên nào</p>
+      </div>
+
+      <table class="em-table" *ngIf="filteredEmployees.length > 0">
+        <thead>
+          <tr>
+            <th class="col-idx">#</th>
+            <th class="col-name sortable" (click)="sort('name')">
+              Họ và tên
+              <mat-icon *ngIf="sortCol === 'name'">{{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-position sortable" (click)="sort('position')">
+              Chức vụ
+              <mat-icon *ngIf="sortCol === 'position'">{{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-dept sortable" (click)="sort('dept')">
+              Phòng ban
+              <mat-icon *ngIf="sortCol === 'dept'">{{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-level sortable" (click)="sort('level')">
+              Cấp bậc
+              <mat-icon *ngIf="sortCol === 'level'">{{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-manager">Quản lý</th>
+            <th class="col-email">Email</th>
+            <th class="col-phone">Số điện thoại</th>
+            <th class="col-joindate sortable" (click)="sort('joinDate')">
+              Ngày vào làm
+              <mat-icon *ngIf="sortCol === 'joinDate'">{{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-projects">Dự án</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let emp of pagedEmployees; let i = index"
+            [class.selected]="selectedEmployee?.id === emp.id"
+            (click)="openView(emp)"
+          >
+            <td class="col-idx">{{ page * pageSize + i + 1 }}</td>
+            <td class="col-name">
+              <div class="em-name-cell">
+                <div class="em-avatar" [style.background]="getAvatarColor(emp.name)">{{ getInitials(emp.name) }}</div>
+                <div class="em-name-info">
+                  <span class="em-name">{{ emp.name }}</span>
+                  <span class="em-id">{{ emp.id }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="col-position">{{ emp.position }}</td>
+            <td class="col-dept"><span class="em-dept-badge">{{ emp.department }}</span></td>
+            <td class="col-level"><span class="em-level-badge level-{{ emp.level }}">{{ getLevelLabel(emp.level) }}</span></td>
+            <td class="col-manager">{{ getManagerName(emp.managerId) }}</td>
+            <td class="col-email">{{ emp.email || '—' }}</td>
+            <td class="col-phone">{{ emp.phone || '—' }}</td>
+            <td class="col-joindate">{{ emp.joinDate || '—' }}</td>
+            <td class="col-projects">
+              <span class="em-proj-count" *ngIf="emp.projects?.length">
+                <mat-icon>work</mat-icon>{{ emp.projects.length }}
+              </span>
+              <span *ngIf="!emp.projects?.length" class="em-no-proj">—</span>
+            </td>
+            <td class="col-actions" (click)="$event.stopPropagation()">
+              <ng-container *ngIf="deleteConfirmId !== emp.id; else confirmTpl">
+                <button mat-icon-button class="em-action-btn edit" title="Chỉnh sửa" (click)="openEdit(emp, $event)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button class="em-action-btn delete" title="Xóa" (click)="confirmDelete(emp.id, $event)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </ng-container>
+              <ng-template #confirmTpl>
+                <span class="em-confirm-del">Xóa?</span>
+                <button mat-icon-button class="em-action-btn confirm" title="Xác nhận xóa" (click)="doDelete(emp.id)">
+                  <mat-icon>check</mat-icon>
+                </button>
+                <button mat-icon-button class="em-action-btn cancel" title="Hủy" (click)="cancelDelete()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="em-pagination" *ngIf="filteredEmployees.length > pageSize">
+      <span class="pag-info">{{ page * pageSize + 1 }}–{{ endIndex }} / {{ filteredEmployees.length }} nhân viên</span>
+      <div class="pag-controls">
+        <button mat-icon-button class="pag-btn" (click)="goTo(0)" [disabled]="page === 0"><mat-icon>first_page</mat-icon></button>
+        <button mat-icon-button class="pag-btn" (click)="goTo(page - 1)" [disabled]="page === 0"><mat-icon>chevron_left</mat-icon></button>
+        <button
+          *ngFor="let p of pageNumbers"
+          class="pag-page-btn"
+          [class.active]="p === page"
+          (click)="goTo(p)"
+        >{{ p + 1 }}</button>
+        <button mat-icon-button class="pag-btn" (click)="goTo(page + 1)" [disabled]="page >= totalPages - 1"><mat-icon>chevron_right</mat-icon></button>
+        <button mat-icon-button class="pag-btn" (click)="goTo(totalPages - 1)" [disabled]="page >= totalPages - 1"><mat-icon>last_page</mat-icon></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ POPUP MODAL ══════════════ -->
+  <div class="em-modal-overlay" *ngIf="panelMode !== 'closed'" (click)="closePanel()">
+    <div class="em-modal" [class.modal-wide]="panelMode === 'edit' || panelMode === 'create'" (click)="$event.stopPropagation()">
+
+      <!-- Modal header -->
+      <div class="em-modal-header">
+        <div class="em-panel-title">
+          <mat-icon>{{ panelMode === 'create' ? 'person_add' : panelMode === 'edit' ? 'edit' : 'person' }}</mat-icon>
+          <span>{{
+            panelMode === 'create' ? 'Thêm nhân viên mới' :
+            panelMode === 'edit'   ? 'Chỉnh sửa nhân viên' :
+                                     'Chi tiết nhân viên'
+          }}</span>
+        </div>
+        <div class="em-panel-actions" *ngIf="panelMode === 'view' && selectedEmployee">
+          <button mat-icon-button title="Chỉnh sửa" (click)="switchToEdit()"><mat-icon>edit</mat-icon></button>
+          <button mat-icon-button class="delete-btn" title="Xóa" (click)="confirmDelete(selectedEmployee.id)"><mat-icon>delete</mat-icon></button>
+          <button mat-icon-button title="Đóng" (click)="closePanel()"><mat-icon>close</mat-icon></button>
+        </div>
+        <button mat-icon-button title="Đóng" (click)="closePanel()" *ngIf="panelMode !== 'view'"><mat-icon>close</mat-icon></button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="em-modal-body">
+
+        <!-- ── VIEW MODE ── -->
+        <ng-container *ngIf="panelMode === 'view' && selectedEmployee as emp">
+
+          <!-- Delete confirm bar -->
+          <div class="em-delete-bar" *ngIf="deleteConfirmId === emp.id">
+            <mat-icon>warning</mat-icon>
+            <span>Xác nhận xóa nhân viên <strong>{{ emp.name }}</strong>?</span>
+            <button mat-flat-button color="warn" (click)="doDelete(emp.id)">Xóa</button>
+            <button mat-stroked-button (click)="cancelDelete()">Hủy</button>
+          </div>
+
+          <!-- Avatar + name block -->
+          <div class="em-view-hero">
+            <div class="em-view-avatar" [style.background]="getAvatarColor(emp.name)">{{ getInitials(emp.name) }}</div>
+            <div class="em-view-hero-info">
+              <h3>{{ emp.name }}</h3>
+              <p class="em-view-position">{{ emp.position }}</p>
+              <span class="em-level-badge level-{{ emp.level }}">{{ getLevelLabel(emp.level) }}</span>
+            </div>
+          </div>
+
+          <!-- Info grid -->
+          <div class="em-view-grid">
+            <div class="em-view-item">
+              <label><mat-icon>badge</mat-icon>Mã nhân viên</label>
+              <span>{{ emp.id }}</span>
+            </div>
+            <div class="em-view-item">
+              <label><mat-icon>business</mat-icon>Phòng ban</label>
+              <span>{{ emp.department || '—' }}</span>
+            </div>
+            <div class="em-view-item">
+              <label><mat-icon>supervisor_account</mat-icon>Quản lý trực tiếp</label>
+              <span>{{ getManagerName(emp.managerId) }}</span>
+            </div>
+            <div class="em-view-item">
+              <label><mat-icon>calendar_today</mat-icon>Ngày vào làm</label>
+              <span>{{ emp.joinDate || '—' }}</span>
+            </div>
+            <div class="em-view-item">
+              <label><mat-icon>email</mat-icon>Email</label>
+              <span>{{ emp.email || '—' }}</span>
+            </div>
+            <div class="em-view-item">
+              <label><mat-icon>phone</mat-icon>Số điện thoại</label>
+              <span>{{ emp.phone || '—' }}</span>
+            </div>
+          </div>
+
+          <!-- Projects -->
+          <div class="em-view-section">
+            <h4><mat-icon>work</mat-icon> Dự án tham gia ({{ emp.projects?.length ?? 0 }})</h4>
+            <div class="em-no-data" *ngIf="!emp.projects?.length">Chưa tham gia dự án nào</div>
+            <div class="em-proj-list" *ngIf="emp.projects?.length">
+              <div class="em-proj-item" *ngFor="let p of emp.projects">
+                <div class="em-proj-top">
+                  <span class="em-proj-name">{{ p.name }}</span>
+                  <span class="em-proj-status" [class]="getStatusClass(p.status)">{{ statusLabel[p.status] }}</span>
+                </div>
+                <div class="em-proj-sub">
+                  <span class="em-proj-role"><mat-icon>work_outline</mat-icon>{{ p.role || 'Thành viên' }}</span>
+                  <span class="em-proj-dates" *ngIf="p.startDate || p.endDate">
+                    {{ p.startDate || '?' }} → {{ p.endDate || 'nay' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- ── EDIT / CREATE MODE ── -->
+        <ng-container *ngIf="panelMode === 'edit' || panelMode === 'create'">
+          <form class="em-form" (ngSubmit)="saveEmployee()" #f="ngForm">
+
+            <!-- Basic info section -->
+            <div class="em-form-section">
+              <h4><mat-icon>person</mat-icon> Thông tin cơ bản</h4>
+
+              <div class="em-form-row">
+                <div class="em-form-field" [class.has-error]="formErrors['id']">
+                  <label>Mã nhân viên <span class="required">*</span></label>
+                  <input type="text" [(ngModel)]="form.id" [disabled]="panelMode === 'edit'" name="id" placeholder="VD: NV001" />
+                  <span class="em-field-error" *ngIf="formErrors['id']">{{ formErrors['id'] }}</span>
+                </div>
+                <div class="em-form-field" [class.has-error]="formErrors['name']">
+                  <label>Họ và tên <span class="required">*</span></label>
+                  <input type="text" [(ngModel)]="form.name" name="name" placeholder="Nguyễn Văn A" />
+                  <span class="em-field-error" *ngIf="formErrors['name']">{{ formErrors['name'] }}</span>
+                </div>
+              </div>
+
+              <div class="em-form-row">
+                <div class="em-form-field" [class.has-error]="formErrors['position']">
+                  <label>Chức vụ <span class="required">*</span></label>
+                  <input type="text" [(ngModel)]="form.position" name="position" placeholder="Lập trình viên" />
+                  <span class="em-field-error" *ngIf="formErrors['position']">{{ formErrors['position'] }}</span>
+                </div>
+                <div class="em-form-field" [class.has-error]="formErrors['department']">
+                  <label>Phòng ban <span class="required">*</span></label>
+                  <input type="text" [(ngModel)]="form.department" name="department"
+                    [attr.list]="'dept-list-' + panelMode"
+                    placeholder="Chọn hoặc nhập phòng ban" />
+                  <datalist [id]="'dept-list-' + panelMode">
+                    <option *ngFor="let d of departments" [value]="d"></option>
+                  </datalist>
+                  <span class="em-field-error" *ngIf="formErrors['department']">{{ formErrors['department'] }}</span>
+                </div>
+              </div>
+
+              <div class="em-form-row">
+                <div class="em-form-field">
+                  <label>Quản lý trực tiếp</label>
+                  <select [(ngModel)]="form.managerId" name="managerId">
+                    <option [ngValue]="null">— Không có —</option>
+                    <option
+                      *ngFor="let e of allEmployees"
+                      [value]="e.id"
+                      [disabled]="e.id === form.id"
+                    >{{ e.name }} ({{ e.position }})</option>
+                  </select>
+                </div>
+                <div class="em-form-field">
+                  <label>Ngày vào làm</label>
+                  <input type="text" [(ngModel)]="form.joinDate" name="joinDate" placeholder="DD/MM/YYYY" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact section -->
+            <div class="em-form-section">
+              <h4><mat-icon>contact_mail</mat-icon> Liên hệ</h4>
+
+              <div class="em-form-row">
+                <div class="em-form-field" [class.has-error]="formErrors['email']">
+                  <label>Email</label>
+                  <input type="email" [(ngModel)]="form.email" name="email" placeholder="nguyen.a@company.com" />
+                  <span class="em-field-error" *ngIf="formErrors['email']">{{ formErrors['email'] }}</span>
+                </div>
+                <div class="em-form-field">
+                  <label>Số điện thoại</label>
+                  <input type="text" [(ngModel)]="form.phone" name="phone" placeholder="0901234567" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Projects section -->
+            <div class="em-form-section">
+              <div class="em-section-header-row">
+                <h4><mat-icon>work</mat-icon> Dự án ({{ (form.projects ?? []).length }})</h4>
+                <button type="button" mat-stroked-button class="em-add-proj-btn" (click)="showAddProject = !showAddProject">
+                  <mat-icon>{{ showAddProject ? 'remove' : 'add' }}</mat-icon>
+                  {{ showAddProject ? 'Hủy' : 'Thêm dự án' }}
+                </button>
+              </div>
+
+              <!-- Add project mini-form -->
+              <div class="em-add-proj-form" *ngIf="showAddProject">
+                <input type="text" [(ngModel)]="newProject.name" name="npName" placeholder="Tên dự án *" />
+                <input type="text" [(ngModel)]="newProject.role" name="npRole" placeholder="Vai trò" />
+                <input type="text" [(ngModel)]="newProject.startDate" name="npStart" placeholder="Bắt đầu (DD/MM/YYYY)" />
+                <input type="text" [(ngModel)]="newProject.endDate" name="npEnd" placeholder="Kết thúc (DD/MM/YYYY)" />
+                <select [(ngModel)]="newProject.status" name="npStatus">
+                  <option value="active">Đang thực hiện</option>
+                  <option value="pending">Chờ triển khai</option>
+                  <option value="completed">Hoàn thành</option>
+                </select>
+                <button type="button" mat-flat-button color="primary" (click)="addProjectToForm()">Thêm</button>
+              </div>
+
+              <div class="em-no-data" *ngIf="!(form.projects ?? []).length">Chưa có dự án</div>
+              <div class="em-proj-list form-proj-list">
+                <div class="em-proj-item" *ngFor="let p of (form.projects ?? []); let pi = index">
+                  <div class="em-proj-top">
+                    <span class="em-proj-name">{{ p.name }}</span>
+                    <span class="em-proj-status" [class]="getStatusClass(p.status)">{{ statusLabel[p.status] }}</span>
+                    <button type="button" mat-icon-button class="em-remove-proj" (click)="removeProjectFromForm(pi)">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <div class="em-proj-sub">
+                    <span class="em-proj-role"><mat-icon>work_outline</mat-icon>{{ p.role || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer buttons -->
+            <div class="em-form-footer">
+              <button type="button" mat-stroked-button (click)="closePanel()">Hủy</button>
+              <button type="submit" mat-flat-button color="primary">
+                <mat-icon>save</mat-icon>
+                {{ panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi' }}
+              </button>
+            </div>
+          </form>
+        </ng-container>
+
+      </div>
+    </div>
+  </div>
+
+</div>

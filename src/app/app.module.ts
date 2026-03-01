@@ -30,6 +30,8 @@ import { ExcelImportComponent } from './components/excel-import/excel-import.com
 import { OrgChartComponent } from './components/org-chart/org-chart.component';
 import { OrgNodeComponent } from './components/org-chart/org-node.component';
 import { EmployeeDetailComponent } from './components/employee-detail/employee-detail.component';
+import { ProjectManagementComponent } from './components/project-management/project-management.component';
+import { EmployeeManagementComponent } from './components/employee-management/employee-management.component';
 
 @NgModule({
   declarations: [
@@ -37,7 +39,9 @@ import { EmployeeDetailComponent } from './components/employee-detail/employee-d
     ExcelImportComponent,
     OrgChartComponent,
     OrgNodeComponent,
-    EmployeeDetailComponent
+    EmployeeDetailComponent,
+    ProjectManagementComponent,
+    EmployeeManagementComponent
   ],
   imports: [
     BrowserModule,

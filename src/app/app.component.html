@@ -2,6 +2,9 @@
   <!-- Top Navigation Bar -->
   <mat-toolbar class="app-toolbar" color="primary">
     <div class="toolbar-left">
+      <button mat-icon-button class="menu-toggle-btn" (click)="toggleMobileNav()" aria-label="Toggle menu">
+        <mat-icon>{{ isMobileNavOpen ? 'close' : 'menu' }}</mat-icon>
+      </button>
       <mat-icon class="logo-icon">account_tree</mat-icon>
       <span class="app-title">eFlow SW2</span>
       <span class="app-subtitle">Sơ đồ Phân cấp Nhân sự SW2</span>
@@ -63,8 +66,22 @@
   <div class="app-body">
 
     <!-- Left Sidebar Menu -->
-    <nav class="side-nav">
+    <div class="nav-backdrop" *ngIf="isMobileNavOpen" (click)="closeMobileNav()"></div>
+    <nav class="side-nav" [class.mobile-open]="isMobileNavOpen">
       <div class="nav-section-label">MENU</div>
+
+      <!-- Trang chủ -->
+      <button
+        class="nav-item"
+        [class.active]="activeMenu === 'none'"
+        (click)="onClearData()"
+        matTooltip="Trang chủ"
+        matTooltipPosition="right"
+        aria-label="Trang chủ"
+      >
+        <mat-icon>home</mat-icon>
+        <span class="nav-label">Trang chủ</span>
+      </button>
 
       <!-- Tổ chức -->
       <button
@@ -76,23 +93,35 @@
         aria-label="Sơ đồ tổ chức"
       >
         <mat-icon>account_tree</mat-icon>
-        <span class="nav-label">Tổ chức</span>
+        <span class="nav-label">Tổ chức SW2</span>
         <mat-icon class="nav-loading-icon" aria-label="Đang tải dữ liệu tổ chức" *ngIf="isSampleLoading && activeMenu !== 'orgchart'">hourglass_empty</mat-icon>
       </button>
 
-      <!-- Import Excel -->
+      <!-- Dự án -->
       <button
         class="nav-item"
-        [class.active]="activeMenu === 'import'"
-        (click)="selectMenu('import')"
-        matTooltip="Import file Excel"
+        [class.active]="activeMenu === 'projects'"
+        (click)="selectMenu('projects')"
+        matTooltip="Quản lý dự án"
         matTooltipPosition="right"
+        aria-label="Quản lý dự án"
       >
-        <mat-icon>upload_file</mat-icon>
-        <span class="nav-label">Import</span>
+        <mat-icon>folder_special</mat-icon>
+        <span class="nav-label">Dự án</span>
       </button>
 
-      <div class="nav-divider"></div>
+      <!-- Nhân sự -->
+      <button
+        class="nav-item"
+        [class.active]="activeMenu === 'employees'"
+        (click)="selectMenu('employees')"
+        matTooltip="Quản lý nhân sự"
+        matTooltipPosition="right"
+        aria-label="Quản lý nhân sự"
+      >
+        <mat-icon>manage_accounts</mat-icon>
+        <span class="nav-label">Nhân sự</span>
+      </button>
 
       <!-- Xóa dữ liệu -->
       <button
@@ -159,6 +188,21 @@
               <p>Tìm nhanh nhân viên theo tên, phòng ban, chức vụ</p>
             </div>
           </div>
+
+          <!-- Footer developer info -->
+          <div class="welcome-footer">
+            <div class="wf-divider"></div>
+            <div class="wf-content">
+              <mat-icon>code</mat-icon>
+              <span>Phát triển bởi <strong>Team SW2</strong></span>
+              <span class="wf-sep">·</span>
+              <mat-icon>business</mat-icon>
+              <span>FIS BANK HCM</span>
+              <span class="wf-sep">·</span>
+              <mat-icon>calendar_today</mat-icon>
+              <span>2026</span>
+            </div>
+          </div>
         </div>
 
         <div class="import-form-section">
@@ -170,11 +214,25 @@
       </div>
 
       <!-- Org Chart -->
-      <div class="chart-section" *ngIf="hasData && !isSampleLoading">
+      <div class="chart-section" *ngIf="hasData && !isSampleLoading && activeMenu === 'orgchart'">
         <app-org-chart
           [orgTree]="orgTree"
           [allEmployees]="allEmployees"
         ></app-org-chart>
+      </div>
+
+      <!-- Project Management -->
+      <div class="chart-section" *ngIf="hasData && !isSampleLoading && activeMenu === 'projects'">
+        <app-project-management
+          [allEmployees]="allEmployees"
+        ></app-project-management>
+      </div>
+
+      <!-- Employee Management -->
+      <div class="chart-section" *ngIf="hasData && !isSampleLoading && activeMenu === 'employees'">
+        <app-employee-management
+          [allEmployees]="allEmployees"
+        ></app-employee-management>
       </div>
 
     </div>

@@ -86,8 +86,13 @@
   gap: 4px;
 
   @media (max-width: 600px) {
-    justify-content: space-between;
     width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    &::-webkit-scrollbar { display: none; }
   }
 }
 
@@ -153,6 +158,16 @@
   flex-shrink: 0;
   flex-wrap: wrap;
 
+  @media (max-width: 600px) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 6px 12px;
+    gap: 6px;
+    &::-webkit-scrollbar { display: none; }
+  }
+
   .lf-label {
     font-size: 12px;
     font-weight: 600;
@@ -164,6 +179,10 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+
+    @media (max-width: 600px) {
+      flex-wrap: nowrap;
+    }
   }
 
   .level-pill {
@@ -250,6 +269,10 @@
     font-size: 11px;
     color: #999;
     font-style: italic;
+
+    @media (max-width: 600px) {
+      display: none;
+    }
   }
 }
 
@@ -433,6 +456,10 @@
   background: #e0e0e0;
   margin: 0 2px;
   flex-shrink: 0;
+
+  @media (max-width: 400px) {
+    display: none;
+  }
 }
 
 // -------------------------------------------------------
@@ -564,6 +591,13 @@
     .hint-desktop {
       @media (max-width: 600px) {
         display: none;
+      }
+    }
+
+    .hint-mobile {
+      display: none;
+      @media (max-width: 600px) {
+        display: inline;
       }
     }
   }

@@ -25,6 +25,7 @@
   align-items: center;
   text-align: center;
   gap: 6px;
+  touch-action: manipulation; // faster tap on mobile
 
   @media (max-width: 600px) {
     min-width: 140px;
@@ -33,6 +34,14 @@
     padding: 10px 10px 10px;
     gap: 4px;
     border-radius: 10px;
+  }
+
+  @media (max-width: 400px) {
+    min-width: 110px;
+    max-width: 138px;
+    width: 125px;
+    padding: 8px 8px 8px;
+    gap: 3px;
   }
 
   &:hover {
@@ -68,6 +77,12 @@
     height: 36px;
     font-size: 13px;
   }
+
+  @media (max-width: 400px) {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
 }
 
 .node-info {
@@ -84,6 +99,7 @@
   text-overflow: ellipsis;
 
   @media (max-width: 600px) { font-size: 11px; }
+  @media (max-width: 400px) { font-size: 10px; }
 }
 
 .node-position {
@@ -96,6 +112,7 @@
   margin-top: 2px;
 
   @media (max-width: 600px) { font-size: 10px; }
+  @media (max-width: 400px) { font-size: 9px; }
 }
 
 .node-dept {
@@ -115,6 +132,11 @@
   justify-content: center;
   flex-wrap: wrap;
   margin-top: 4px;
+
+  @media (max-width: 400px) {
+    gap: 3px;
+    margin-top: 2px;
+  }
 
   .stat-badge {
     display: inline-flex;
@@ -244,6 +266,13 @@
   z-index: 2;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   transition: all 0.2s;
+  touch-action: manipulation;
+
+  @media (max-width: 600px) {
+    width: 32px;
+    height: 32px;
+    bottom: -16px;
+  }
 
   mat-icon {
     font-size: 16px;
@@ -326,6 +355,7 @@
   position: relative;
 
   @media (max-width: 600px) { padding: 0 6px; }
+  @media (max-width: 400px) { padding: 0 3px; }
 
   .branch-line {
     width: 2px;

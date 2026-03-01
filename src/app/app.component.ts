@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { Employee, ImportResult, OrgNode } from './models/employee.model';
 import { ExcelImportService } from './services/excel-import.service';
 
-type ActiveMenu = 'orgchart' | 'import' | 'none';
+type ActiveMenu = 'orgchart' | 'projects' | 'employees' | 'import' | 'none';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +20,7 @@ export class AppComponent {
   activeMenu: ActiveMenu = 'none';
   isSampleLoading = false;
   isDarkTheme = true;
+  isMobileNavOpen = false;
 
   stats = { total: 0, departments: 0, projects: 0, levels: 0 };
 
@@ -34,9 +35,6 @@ export class AppComponent {
     this.excelService.orgTree$.subscribe(tree => {
       this.orgTree = tree;
     });
-
-    // Tải sẵn dữ liệu tổ chức khi khởi động
-    this.selectMenu('orgchart');
   }
 
   onImportDone(result: ImportResult): void {
@@ -57,17 +55,29 @@ export class AppComponent {
     document.body.classList.toggle('dark-theme', this.isDarkTheme);
   }
 
+  toggleMobileNav(): void {
+    this.isMobileNavOpen = !this.isMobileNavOpen;
+  }
+
+  closeMobileNav(): void {
+    this.isMobileNavOpen = false;
+  }
+
   selectMenu(menu: ActiveMenu): void {
     this.activeMenu = menu;
-    if (menu === 'import') {
-      this.showImportPanel = true;
-    }
+    this.isMobileNavOpen = false;
     if (menu === 'orgchart') {
       if (!this.hasData) {
         this.loadSampleData();
       } else {
         this.showImportPanel = false;
       }
+    }
+    if (menu === 'projects' && !this.hasData) {
+      this.loadSampleData();
+    }
+    if (menu === 'employees' && !this.hasData) {
+      this.loadSampleData();
     }
   }
 
@@ -80,7 +90,6 @@ export class AppComponent {
       this.hasData = result.employees.length > 0;
       if (this.hasData) {
         this.showImportPanel = false;
-        this.activeMenu = 'orgchart';
       }
     } catch (err) {
       console.error('Không thể tải dữ liệu mẫu', err);
