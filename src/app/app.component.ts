@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { Employee, ImportResult, OrgNode } from './models/employee.model';
 import { ExcelImportService } from './services/excel-import.service';
 
+type ActiveMenu = 'orgchart' | 'import' | 'none';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -15,10 +17,16 @@ export class AppComponent {
   hasData = false;
   showImportPanel = true;
   importResult: ImportResult | null = null;
+  activeMenu: ActiveMenu = 'none';
+  isSampleLoading = false;
+  isDarkTheme = true;
 
   stats = { total: 0, departments: 0, projects: 0, levels: 0 };
 
   constructor(private excelService: ExcelImportService) {
+    // Áp dụng dark theme mặc định ngay lập tức
+    document.body.classList.add('dark-theme');
+
     this.excelService.employees$.subscribe(employees => {
       this.allEmployees = employees;
       this.computeStats();
@@ -26,6 +34,9 @@ export class AppComponent {
     this.excelService.orgTree$.subscribe(tree => {
       this.orgTree = tree;
     });
+
+    // Tải sẵn dữ liệu tổ chức khi khởi động
+    this.selectMenu('orgchart');
   }
 
   onImportDone(result: ImportResult): void {
@@ -33,11 +44,49 @@ export class AppComponent {
     this.hasData = result.employees.length > 0;
     if (this.hasData) {
       this.showImportPanel = false;
+      this.activeMenu = 'orgchart';
     }
   }
 
   toggleImportPanel(): void {
     this.showImportPanel = !this.showImportPanel;
+  }
+
+  toggleTheme(): void {
+    this.isDarkTheme = !this.isDarkTheme;
+    document.body.classList.toggle('dark-theme', this.isDarkTheme);
+  }
+
+  selectMenu(menu: ActiveMenu): void {
+    this.activeMenu = menu;
+    if (menu === 'import') {
+      this.showImportPanel = true;
+    }
+    if (menu === 'orgchart') {
+      if (!this.hasData) {
+        this.loadSampleData();
+      } else {
+        this.showImportPanel = false;
+      }
+    }
+  }
+
+  async loadSampleData(): Promise<void> {
+    if (this.isSampleLoading) return;
+    this.isSampleLoading = true;
+    try {
+      const result = await this.excelService.loadFromUrl('assets/data/sample-data-55emp-6proj.xlsx');
+      this.importResult = result;
+      this.hasData = result.employees.length > 0;
+      if (this.hasData) {
+        this.showImportPanel = false;
+        this.activeMenu = 'orgchart';
+      }
+    } catch (err) {
+      console.error('Không thể tải dữ liệu mẫu', err);
+    } finally {
+      this.isSampleLoading = false;
+    }
   }
 
   private computeStats(): void {
@@ -58,6 +107,7 @@ export class AppComponent {
     this.hasData = false;
     this.showImportPanel = true;
     this.importResult = null;
+    this.activeMenu = 'none';
     this.excelService.clearData();
   }
 }

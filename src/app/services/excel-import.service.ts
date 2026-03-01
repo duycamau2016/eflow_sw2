@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import * as XLSX from 'xlsx';
 import { Employee, Project, ImportResult, OrgNode } from '../models/employee.model';
 
@@ -12,6 +13,8 @@ export class ExcelImportService {
 
   employees$ = this.employeesSubject.asObservable();
   orgTree$ = this.orgTreeSubject.asObservable();
+
+  constructor(private http: HttpClient) {}
 
   /**
    * Parse file Excel và trả về danh sách nhân viên
@@ -267,6 +270,92 @@ export class ExcelImportService {
     XLSX.utils.book_append_sheet(wb, projectSheet, 'Dự án');
 
     XLSX.writeFile(wb, 'mau_nhan_su_phan_cap.xlsx');
+  }
+
+  /**
+   * Tải dữ liệu Excel từ URL (dùng cho file mẫu trong assets)
+   */
+  async loadFromUrl(url: string): Promise<ImportResult> {
+    const arrayBuffer = await this.http.get(url, { responseType: 'arraybuffer' }).toPromise();
+    const data = new Uint8Array(arrayBuffer!);
+    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+    const fakeFile = {
+      name: url.split('/').pop() || 'sample.xlsx',
+      arrayBuffer: async () => arrayBuffer as ArrayBuffer
+    } as unknown as File;
+
+    // Reuse the existing parse logic by passing raw data directly
+    return this._parseWorkbook(workbook);
+  }
+
+  private _parseWorkbook(workbook: XLSX.WorkBook): ImportResult {
+    const errors: string[] = [];
+    const employees: Employee[] = [];
+    const projectMap = new Map<string, Project[]>();
+
+    const projectSheetName = workbook.SheetNames.find(
+      n => n.toLowerCase().includes('dự án') ||
+           n.toLowerCase().includes('du an') ||
+           n.toLowerCase().includes('project')
+    );
+
+    if (projectSheetName) {
+      const projectSheet = workbook.Sheets[projectSheetName];
+      const projectRows: any[] = XLSX.utils.sheet_to_json(projectSheet, { header: 1, defval: '' });
+      for (let i = 1; i < projectRows.length; i++) {
+        const row = projectRows[i];
+        if (!row[0]) continue;
+        const empId = String(row[0]).trim();
+        const project: Project = {
+          id: `proj_${i}`,
+          name: String(row[1] || '').trim(),
+          role: String(row[2] || '').trim(),
+          startDate: this.formatDate(row[3]),
+          endDate: this.formatDate(row[4]),
+          status: this.parseProjectStatus(String(row[5] || ''))
+        };
+        if (!projectMap.has(empId)) projectMap.set(empId, []);
+        projectMap.get(empId)!.push(project);
+      }
+    }
+
+    const hrSheetName = workbook.SheetNames.find(
+      n => n.toLowerCase().includes('nhân sự') ||
+           n.toLowerCase().includes('nhan su') ||
+           n.toLowerCase().includes('employee') ||
+           n.toLowerCase().includes('hr')
+    ) || workbook.SheetNames[0];
+
+    const hrSheet = workbook.Sheets[hrSheetName];
+    const hrRows: any[] = XLSX.utils.sheet_to_json(hrSheet, { header: 1, defval: '' });
+
+    for (let i = 1; i < hrRows.length; i++) {
+      const row = hrRows[i];
+      if (!row[0] && !row[1]) continue;
+      const id = String(row[0] || `EMP_${i}`).trim();
+      const name = String(row[1] || '').trim();
+      if (!name) { errors.push(`Dòng ${i + 1}: Thiếu họ tên nhân viên`); continue; }
+      employees.push({
+        id, name,
+        position: String(row[2] || '').trim(),
+        department: String(row[3] || '').trim(),
+        email: String(row[4] || '').trim(),
+        phone: String(row[5] || '').trim(),
+        managerId: row[6] ? String(row[6]).trim() : null,
+        joinDate: this.formatDate(row[7]),
+        level: 0,
+        projects: projectMap.get(id) || [],
+        children: [],
+        avatar: this.generateAvatar(String(row[1] || ''))
+      });
+    }
+
+    const tree = this.buildOrgTree(employees);
+    this.employeesSubject.next(employees);
+    this.orgTreeSubject.next(tree);
+
+    return { success: true, employees, errors, total: employees.length };
   }
 
   clearData(): void {

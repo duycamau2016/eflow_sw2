@@ -1,6 +1,6 @@
 import {
   Component, Input, OnChanges, SimpleChanges, Output,
-  EventEmitter, ViewChild, ElementRef
+  EventEmitter, ViewChild, ElementRef, AfterViewInit
 } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { OrgNode, Employee } from '../../models/employee.model';
@@ -36,7 +36,7 @@ export class OrgChartComponent implements OnChanges {
   positionMenuSearch = '';
 
   // Level filter
-  selectedLevels = new Set<number>([0, 1, 2]);
+  selectedLevels = new Set<number>([0, 1, 2, 3]);
   availableLevels: number[] = [];
   maxAvailableLevel = 0;
 
@@ -74,6 +74,11 @@ export class OrgChartComponent implements OnChanges {
       this.buildAvailablePositions();
       this.buildAvailableLevels();
       this.applyFilters();
+
+      // Sau khi render xong, tự động scale vừa khung nhìn
+      if (this.allEmployees.length > 0) {
+        setTimeout(() => this.fitToView(), 400);
+      }
     }
   }
 
@@ -119,8 +124,8 @@ export class OrgChartComponent implements OnChanges {
     const max = this.allEmployees.reduce((m, e) => Math.max(m, e.level ?? 0), 0);
     this.maxAvailableLevel = max;
     this.availableLevels = Array.from({ length: max + 1 }, (_, i) => i);
-    // Mặc định hiển thị cấp 1, 2, 3 (index 0,1,2)
-    this.selectedLevels = new Set([0, 1, 2].filter(l => l <= max));
+    // Mặc định hiển thị cấp 1, 2, 3, 4 (index 0,1,2,3)
+    this.selectedLevels = new Set([0, 1, 2, 3].filter(l => l <= max));
   }
 
   toggleLevel(level: number): void {
@@ -219,6 +224,29 @@ export class OrgChartComponent implements OnChanges {
 
   resetZoom(): void {
     this.zoomLevel = 1;
+    setTimeout(() => this.scrollToCenter(), 50);
+  }
+
+  fitToView(): void {
+    const wrapper = this.chartWrapperRef?.nativeElement;
+    if (!wrapper) return;
+
+    // CSS zoom scales the scrollable content dimensions proportionally:
+    // scrollWidth = naturalWidth * zoomLevel  →  naturalWidth = scrollWidth / zoomLevel
+    const naturalW = wrapper.scrollWidth / this.zoomLevel;
+    const naturalH = wrapper.scrollHeight / this.zoomLevel;
+    const viewW = wrapper.clientWidth;
+    const viewH = wrapper.clientHeight;
+
+    if (naturalW <= 0 || naturalH <= 0 || viewW <= 0 || viewH <= 0) return;
+
+    const scaleX = viewW / naturalW;
+    const scaleY = viewH / naturalH;
+    // Take the smaller axis, with a slight padding margin (0.88)
+    const fitZoom = Math.min(scaleX, scaleY) * 0.88;
+
+    this.zoomLevel = Math.max(this.MIN_ZOOM, Math.min(1.0, +(fitZoom).toFixed(2)));
+    setTimeout(() => this.scrollToCenter(), 50);
   }
 
   // -------------------------------------------------------
