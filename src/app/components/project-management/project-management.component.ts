@@ -80,6 +80,48 @@ export class ProjectManagementComponent implements OnChanges {
   zoomOut(): void { this.zoomLevel = Math.max(this.MIN_ZOOM, +(this.zoomLevel - 0.1).toFixed(2)); }
   resetZoom(): void { this.zoomLevel = 0.7; setTimeout(() => this.scrollToCenter(), 50); }
 
+  // Pan state
+  isPanning = false;
+  hasDragged = false;
+  private panStartX = 0;
+  private panStartY = 0;
+  private panScrollLeft = 0;
+  private panScrollTop = 0;
+
+  onPanStart(event: MouseEvent): void {
+    if (event.button === 0 || event.button === 1) {
+      this.isPanning = true;
+      this.hasDragged = false;
+      const el = this.treeWrapperRef?.nativeElement;
+      if (!el) return;
+      this.panStartX = event.clientX;
+      this.panStartY = event.clientY;
+      this.panScrollLeft = el.scrollLeft;
+      this.panScrollTop = el.scrollTop;
+    }
+  }
+
+  onPanMove(event: MouseEvent): void {
+    if (!this.isPanning) return;
+    const dx = event.clientX - this.panStartX;
+    const dy = event.clientY - this.panStartY;
+    if (!this.hasDragged && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+      this.hasDragged = true;
+    }
+    if (this.hasDragged) {
+      event.preventDefault();
+      const el = this.treeWrapperRef?.nativeElement;
+      if (!el) return;
+      el.scrollLeft = this.panScrollLeft - dx;
+      el.scrollTop  = this.panScrollTop  - dy;
+    }
+  }
+
+  onPanEnd(): void {
+    this.isPanning = false;
+    setTimeout(() => { this.hasDragged = false; }, 0);
+  }
+
   onWheel(event: WheelEvent): void {
     if (event.ctrlKey || event.metaKey) {
       event.preventDefault();

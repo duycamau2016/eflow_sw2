@@ -129,10 +129,16 @@
     <div class="pm-member-tree"
       *ngIf="viewMode === 'tree'"
       #treeWrapper
+      (mousedown)="onPanStart($event)"
+      (mousemove)="onPanMove($event)"
+      (mouseup)="onPanEnd()"
+      (mouseleave)="onPanEnd()"
       (wheel)="onWheel($event)"
       (touchstart)="onTouchStart($event)"
       (touchmove)="onTouchMove($event)"
       (touchend)="onTouchEnd()"
+      [class.panning]="isPanning"
+      [class.has-dragged]="hasDragged"
     >
       <div *ngIf="filteredProjectTree.length === 0" class="pm-tree-empty">
         <mat-icon>search_off</mat-icon>

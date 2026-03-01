@@ -585,12 +585,23 @@
   scrollbar-width: thin;
   scrollbar-color: #b0bec5 #f0f2f5;
   touch-action: pan-x pan-y;
+  cursor: grab;
 
   @media (max-width: 600px) { padding: 16px 8px 48px; }
 
   &::-webkit-scrollbar { width: 8px; height: 8px; }
   &::-webkit-scrollbar-track { background: #e8eaf0; border-radius: 4px; }
   &::-webkit-scrollbar-thumb { background: #90a4ae; border-radius: 4px; }
+}
+
+.pm-member-tree.panning {
+  cursor: grabbing !important;
+  user-select: none;
+  * { cursor: grabbing !important; }
+}
+
+.pm-member-tree.has-dragged .pm-tree-zoom-inner {
+  pointer-events: none;
 }
 
 .pm-tree-empty {
