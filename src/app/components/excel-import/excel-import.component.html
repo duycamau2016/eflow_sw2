@@ -1,0 +1,69 @@
+<div class="import-container">
+  <!-- Upload Zone -->
+  <div
+    class="upload-zone"
+    [class.drag-over]="isDragOver"
+    [class.has-file]="selectedFileName"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
+    <div class="upload-content" *ngIf="!isLoading && !importResult">
+      <div class="upload-icon">
+        <mat-icon>cloud_upload</mat-icon>
+      </div>
+      <h3>Kéo thả file Excel vào đây</h3>
+      <p>hoặc</p>
+      <label class="browse-btn mat-raised-button mat-primary">
+        <mat-icon>folder_open</mat-icon>
+        Chọn file
+        <input
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          (change)="onFileSelected($event)"
+          style="display:none"
+        />
+      </label>
+      <p class="hint">Hỗ trợ: .xlsx, .xls, .csv</p>
+    </div>
+
+    <!-- Loading state -->
+    <div class="upload-loading" *ngIf="isLoading">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Đang xử lý file <strong>{{ selectedFileName }}</strong>...</p>
+    </div>
+
+    <!-- Success state -->
+    <div class="upload-success" *ngIf="importResult && !isLoading">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+      <h3>Import thành công!</h3>
+      <p>Đã nhập <strong>{{ importResult.total }}</strong> nhân viên từ file <em>{{ selectedFileName }}</em></p>
+      <div class="error-list" *ngIf="importResult.errors.length > 0">
+        <mat-icon color="warn">warning</mat-icon>
+        <span>{{ importResult.errors.length }} cảnh báo</span>
+      </div>
+      <button mat-stroked-button (click)="reset()">
+        <mat-icon>refresh</mat-icon>
+        Import lại
+      </button>
+    </div>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="errorMessage" class="error-msg">
+    <mat-icon>error_outline</mat-icon>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Actions -->
+  <div class="import-actions" *ngIf="!importResult">
+    <button mat-button class="template-btn" (click)="downloadTemplate()">
+      <mat-icon>download</mat-icon>
+      Tải file mẫu
+    </button>
+    <div class="format-hint">
+      <mat-icon>info</mat-icon>
+      <span>File Excel cần có 2 sheet: <strong>Nhân sự</strong> và <strong>Dự án</strong></span>
+    </div>
+  </div>
+</div>

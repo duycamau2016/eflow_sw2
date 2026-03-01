@@ -1,0 +1,217 @@
+<div class="org-chart-container">
+  <!-- Toolbar -->
+  <div class="chart-toolbar">
+    <div class="search-box">
+      <mat-icon>search</mat-icon>
+      <input
+        type="text"
+        placeholder="Tìm kiếm nhân viên, phòng ban, chức vụ..."
+        [(ngModel)]="searchQuery"
+        (input)="onSearch()"
+      />
+      <mat-icon *ngIf="searchQuery" (click)="searchQuery=''; onSearch()" class="clear-icon">close</mat-icon>
+    </div>
+
+    <div class="toolbar-actions">
+      <button mat-icon-button title="Mở rộng tất cả" (click)="expandAll()">
+        <mat-icon>unfold_more</mat-icon>
+      </button>
+      <button mat-icon-button title="Thu gọn tất cả" (click)="collapseAll()">
+        <mat-icon>unfold_less</mat-icon>
+      </button>
+
+      <div class="toolbar-sep"></div>
+
+      <!-- Position filter -->
+      <button
+        mat-stroked-button
+        class="filter-trigger-btn"
+        [class.filter-active]="selectedPositions.length > 0"
+        [matMenuTriggerFor]="positionMenu"
+        title="Lọc theo chức vụ"
+      >
+        <mat-icon>filter_list</mat-icon>
+        <span class="export-label">Chức vụ</span>
+        <span class="pos-badge" *ngIf="selectedPositions.length > 0">{{ selectedPositions.length }}</span>
+      </button>
+
+      <!-- Position filter mat-menu -->
+      <mat-menu #positionMenu="matMenu" xPosition="before" class="pos-filter-menu">
+        <div class="pm-header" (click)="$event.stopPropagation()">
+          <span>Lọc chức vụ</span>
+          <button mat-button color="warn" *ngIf="selectedPositions.length > 0" (click)="clearPositionFilter()">
+            Xóa tất cả
+          </button>
+        </div>
+        <div class="pm-search" (click)="$event.stopPropagation()">
+          <mat-icon>search</mat-icon>
+          <input
+            placeholder="Tìm chức vụ..."
+            [(ngModel)]="positionMenuSearch"
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+        <div class="pm-options" (click)="$event.stopPropagation()">
+          <p class="pm-empty" *ngIf="filteredPositionOptions.length === 0">Không có kết quả</p>
+          <mat-checkbox
+            *ngFor="let pos of filteredPositionOptions"
+            [checked]="selectedPositions.includes(pos)"
+            (change)="togglePosition(pos, $event.checked)"
+            class="pm-option"
+          >{{ pos }}</mat-checkbox>
+        </div>
+      </mat-menu>
+
+      <!-- Export buttons -->
+      <button
+        mat-stroked-button
+        class="export-btn excel-btn"
+        title="Xuất Excel"
+        (click)="onExportExcel()"
+        [disabled]="allEmployees.length === 0"
+      >
+        <mat-icon>table_view</mat-icon>
+        <span class="export-label">Excel</span>
+      </button>
+      <button
+        mat-stroked-button
+        class="export-btn pdf-btn"
+        title="Xuất PDF"
+        (click)="onExportPdf()"
+        [disabled]="allEmployees.length === 0 || isExporting"
+      >
+        <mat-icon>{{ isExporting ? 'hourglass_top' : 'picture_as_pdf' }}</mat-icon>
+        <span class="export-label">{{ isExporting ? '...' : 'PDF' }}</span>
+      </button>
+
+      <div class="toolbar-sep"></div>
+
+      <div class="zoom-controls">
+        <button mat-icon-button title="Thu nhỏ" (click)="zoomOut()" [disabled]="zoomLevel <= 0.4">
+          <mat-icon>zoom_out</mat-icon>
+        </button>
+        <button mat-stroked-button class="zoom-label" (click)="resetZoom()">{{ zoomPercent }}%</button>
+        <button mat-icon-button title="Phóng to" (click)="zoomIn()" [disabled]="zoomLevel >= 1.6">
+          <mat-icon>zoom_in</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Level filter bar -->
+  <div class="level-filter-bar" *ngIf="availableLevels.length > 1">
+    <span class="lf-label">Hiển thị:</span>
+    <div class="lf-pills">
+      <button
+        *ngFor="let level of availableLevels"
+        class="level-pill"
+        [class.active]="selectedLevels.has(level)"
+        [attr.data-level]="level"
+        (click)="toggleLevel(level)"
+        [title]="'Cấp ' + (level + 1) + (level === 0 ? ' (không thể ẩn)' : '')"
+      >Cấp {{ level + 1 }}</button>
+    </div>
+    <button
+      mat-icon-button
+      class="lf-show-all"
+      title="Hiển thị tất cả cấp"
+      (click)="selectAllLevels()"
+      *ngIf="selectedLevels.size < availableLevels.length"
+    >
+      <mat-icon>visibility</mat-icon>
+    </button>
+    <span class="lf-hint" *ngIf="selectedLevels.size < availableLevels.length">
+      Ẩn {{ availableLevels.length - selectedLevels.size }} cấp
+    </span>
+  </div>
+
+  <!-- Active position filter chips -->
+  <div class="active-filter-bar" *ngIf="selectedPositions.length > 0">
+    <mat-icon>filter_alt</mat-icon>
+    <span class="aft-label">Chức vụ:</span>
+    <div class="aft-chips">
+      <span class="aft-chip" *ngFor="let pos of selectedPositions">
+        {{ pos }}
+        <mat-icon (click)="removePositionFilter(pos)">close</mat-icon>
+      </span>
+    </div>
+    <button mat-icon-button class="aft-clear" (click)="clearPositionFilter()" title="Xóa tất cả bộ lọc">
+      <mat-icon>clear_all</mat-icon>
+    </button>
+  </div>
+
+  <!-- Search highlight indicator -->
+  <div class="search-result-bar" *ngIf="searchQuery && highlightedIds.size > 0">
+    <mat-icon>info</mat-icon>
+    Tìm thấy <strong>{{ highlightedIds.size }}</strong> kết quả cho "<em>{{ searchQuery }}</em>"
+  </div>
+  <div class="search-result-bar no-result" *ngIf="searchQuery && highlightedIds.size === 0">
+    <mat-icon>search_off</mat-icon>
+    Không tìm thấy kết quả nào
+  </div>
+  <div class="search-result-bar hint-bar" *ngIf="!searchQuery">
+    <mat-icon>touch_app</mat-icon>
+    Click vào node để xem chi tiết · Cuộn để xem toàn bộ sơ đồ · <span class="hint-desktop">Ctrl + Wheel để zoom</span>
+  </div>
+
+  <!-- Chart canvas -->
+  <div
+    class="chart-canvas-wrapper"
+    #chartWrapper
+    (mousedown)="onPanStart($event)"
+    (mousemove)="onPanMove($event)"
+    (mouseup)="onPanEnd()"
+    (mouseleave)="onPanEnd()"
+    (wheel)="onWheel($event)"
+    [class.panning]="isPanning"
+  >
+    <div
+      class="chart-canvas"
+      #chartCanvas
+    >
+      <div class="chart-zoom-inner" #chartZoomInner [style.zoom]="zoomLevel">
+        <div *ngIf="filteredTree.length === 0" class="empty-chart">
+          <mat-icon>account_tree</mat-icon>
+          <p>Chưa có dữ liệu phân cấp</p>
+        </div>
+
+        <div class="roots-container" *ngIf="filteredTree.length > 0">
+          <app-org-node
+            *ngFor="let root of filteredTree"
+            [node]="root"
+            [allEmployees]="allEmployees"
+            (selectEmployee)="onSelectEmployee($event)"
+            [class.highlighted]="highlightedIds.has(root.employee.id)"
+          ></app-org-node>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating controls -->
+  <div class="floating-controls">
+    <button mat-mini-fab class="fab-btn" title="Về đầu trang" (click)="scrollToTop()">
+      <mat-icon>vertical_align_top</mat-icon>
+    </button>
+    <button mat-mini-fab class="fab-btn" title="Giữa trang" (click)="scrollToCenter()">
+      <mat-icon>filter_center_focus</mat-icon>
+    </button>
+  </div>
+
+  <!-- Legend -->
+  <div class="chart-legend">
+    <div class="legend-item"><div class="legend-dot level-0"></div><span>Cấp 1 (Lãnh đạo)</span></div>
+    <div class="legend-item"><div class="legend-dot level-1"></div><span>Cấp 2</span></div>
+    <div class="legend-item"><div class="legend-dot level-2"></div><span>Cấp 3</span></div>
+    <div class="legend-item"><div class="legend-dot level-3"></div><span>Cấp 4+</span></div>
+    <div class="legend-sep"></div>
+    <div class="legend-item">
+      <span class="legend-badge projects"><mat-icon>work</mat-icon></span>
+      <span>Số dự án</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-badge people"><mat-icon>people</mat-icon></span>
+      <span>Cấp dưới</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,46 @@
+/* You can add global styles to this file, and also import other style files */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  background: #f0f2f5;
+  color: #333;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.mat-dialog-container {
+  border-radius: 12px !important;
+  padding: 0 !important;
+}
+
+.snack-success {
+  background: #4caf50;
+  color: white;
+}
+
+.snack-error {
+  background: #f44336;
+  color: white;
+}

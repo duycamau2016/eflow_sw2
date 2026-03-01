@@ -1,0 +1,152 @@
+<div class="dialog-wrapper">
+  <!-- Header -->
+  <div class="dialog-header" [style.background]="data.employee.avatar">
+    <button mat-icon-button class="close-btn" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+    <div class="avatar-large">{{ initials }}</div>
+    <h2>{{ data.employee.name }}</h2>
+    <p class="position-tag">{{ data.employee.position }}</p>
+    <span class="dept-badge">{{ data.employee.department }}</span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="dialog-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'info'"
+      (click)="activeTab = 'info'"
+    >
+      <mat-icon>person</mat-icon> Thông tin
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'projects'"
+      (click)="activeTab = 'projects'"
+    >
+      <mat-icon>work</mat-icon>
+      Dự án
+      <span class="badge" *ngIf="data.employee.projects.length > 0">{{ data.employee.projects.length }}</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'subordinates'"
+      (click)="activeTab = 'subordinates'"
+    >
+      <mat-icon>group</mat-icon>
+      Cấp dưới
+      <span class="badge" *ngIf="data.subordinates.length > 0">{{ data.subordinates.length }}</span>
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="dialog-body">
+
+    <!-- Tab: Thông tin -->
+    <div *ngIf="activeTab === 'info'" class="tab-content">
+      <div class="info-grid">
+        <div class="info-item">
+          <mat-icon>badge</mat-icon>
+          <div>
+            <label>Mã nhân viên</label>
+            <span>{{ data.employee.id }}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <mat-icon>email</mat-icon>
+          <div>
+            <label>Email</label>
+            <span>{{ data.employee.email || '—' }}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <mat-icon>phone</mat-icon>
+          <div>
+            <label>Số điện thoại</label>
+            <span>{{ data.employee.phone || '—' }}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <mat-icon>calendar_today</mat-icon>
+          <div>
+            <label>Ngày vào làm</label>
+            <span>{{ data.employee.joinDate || '—' }}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <mat-icon>account_tree</mat-icon>
+          <div>
+            <label>Cấp bậc</label>
+            <span>Cấp {{ data.employee.level + 1 }}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <mat-icon>supervisor_account</mat-icon>
+          <div>
+            <label>Quản lý trực tiếp</label>
+            <span>{{ data.manager ? data.manager.name : 'Không có' }}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <mat-icon>people</mat-icon>
+          <div>
+            <label>Số nhân viên cấp dưới</label>
+            <span>{{ data.employee.subordinatesCount || 0 }} người</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Dự án -->
+    <div *ngIf="activeTab === 'projects'" class="tab-content">
+      <div *ngIf="data.employee.projects.length === 0" class="empty-state">
+        <mat-icon>work_off</mat-icon>
+        <p>Chưa có thông tin dự án</p>
+      </div>
+      <div class="project-list" *ngIf="data.employee.projects.length > 0">
+        <div class="project-card" *ngFor="let proj of data.employee.projects">
+          <div class="proj-header">
+            <span class="proj-name">{{ proj.name }}</span>
+            <span class="proj-status" [ngClass]="proj.status">
+              {{ getStatusLabel(proj.status) }}
+            </span>
+          </div>
+          <div class="proj-details">
+            <div class="proj-detail-item">
+              <mat-icon>person_pin</mat-icon>
+              <span>{{ proj.role }}</span>
+            </div>
+            <div class="proj-detail-item" *ngIf="proj.startDate">
+              <mat-icon>date_range</mat-icon>
+              <span>{{ proj.startDate }} — {{ proj.endDate || 'Hiện tại' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Cấp dưới -->
+    <div *ngIf="activeTab === 'subordinates'" class="tab-content">
+      <div *ngIf="data.subordinates.length === 0" class="empty-state">
+        <mat-icon>person_off</mat-icon>
+        <p>Không có nhân viên cấp dưới trực tiếp</p>
+      </div>
+      <div class="subordinate-list" *ngIf="data.subordinates.length > 0">
+        <div class="sub-card" *ngFor="let sub of data.subordinates">
+          <div class="sub-avatar" [style.background]="sub.avatar">
+            {{ sub.name.split(' ').slice(-1)[0][0] }}
+          </div>
+          <div class="sub-info">
+            <strong>{{ sub.name }}</strong>
+            <span>{{ sub.position }}</span>
+            <span class="sub-dept">{{ sub.department }}</span>
+          </div>
+          <span class="sub-count" *ngIf="sub.subordinatesCount && sub.subordinatesCount > 0">
+            <mat-icon>people</mat-icon>{{ sub.subordinatesCount }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

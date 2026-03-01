@@ -1,0 +1,81 @@
+<div class="org-node-wrapper">
+  <!-- Node card -->
+  <div
+    class="node-card"
+    [ngClass]="'level-' + node.employee.level"
+    (click)="onSelect($event)"
+    [attr.title]="node.employee.name + ' - ' + node.employee.position"
+  >
+    <!-- Avatar -->
+    <div class="node-avatar" [style.background]="node.employee.avatar">
+      {{ initials }}
+    </div>
+
+    <!-- Info -->
+    <div class="node-info">
+      <div class="node-name">{{ node.employee.name }}</div>
+      <div class="node-position">{{ node.employee.position }}</div>
+      <div class="node-dept">{{ node.employee.department }}</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="node-stats">
+      <span *ngIf="node.employee.subordinatesCount && node.employee.subordinatesCount > 0" class="stat-badge people" title="Số cấp dưới">
+        <mat-icon>people</mat-icon>{{ node.employee.subordinatesCount }}
+      </span>
+    </div>
+
+    <!-- Projects list -->
+    <div class="node-projects" *ngIf="node.employee.projects.length > 0">
+      <div class="node-projects-header">
+        <mat-icon>work</mat-icon>
+        <span>Dự án ({{ node.employee.projects.length }})</span>
+      </div>
+      <div class="node-projects-body">
+        <div
+          class="node-project-item"
+          *ngFor="let proj of node.employee.projects; let i = index"
+          [class.hidden]="i >= 3"
+          [title]="proj.name + ' — ' + proj.role"
+        >
+          <span class="proj-dot" [ngClass]="proj.status"></span>
+          <span class="proj-label">{{ proj.name }}</span>
+          <span class="proj-role">{{ proj.role }}</span>
+        </div>
+        <div class="node-projects-more" *ngIf="node.employee.projects.length > 3">
+          +{{ node.employee.projects.length - 3 }} dự án khác
+        </div>
+      </div>
+    </div>
+
+    <!-- Expand toggle -->
+    <button
+      *ngIf="hasChildren"
+      class="expand-btn"
+      (click)="toggleExpand($event)"
+      [title]="isExpanded ? 'Thu gọn' : 'Mở rộng'"
+    >
+      <mat-icon>{{ isExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
+
+    <!-- Click indicator -->
+    <div class="click-hint">
+      <mat-icon>info</mat-icon>
+    </div>
+  </div>
+
+  <!-- Children -->
+  <div class="node-children" *ngIf="hasChildren && isExpanded">
+    <div class="children-connector"></div>
+    <div class="children-row">
+      <div class="child-branch" *ngFor="let child of node.children; let first = first; let last = last">
+        <div class="branch-line" [class.first]="first" [class.last]="last"></div>
+        <app-org-node
+          [node]="child"
+          [allEmployees]="allEmployees"
+          (selectEmployee)="onChildSelect($event)"
+        ></app-org-node>
+      </div>
+    </div>
+  </div>
+</div>
