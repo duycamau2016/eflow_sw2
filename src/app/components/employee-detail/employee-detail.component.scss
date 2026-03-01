@@ -318,3 +318,66 @@
     font-size: 14px;
   }
 }
+
+// -------------------------------------------------------
+// Dark theme
+// -------------------------------------------------------
+:host-context(.dark-theme) {
+  .dialog-header {
+    background: linear-gradient(135deg, #312e81, #4f46e5);
+  }
+
+  .dialog-tabs {
+    background: #1e293b;
+    border-bottom-color: #334155;
+    .tab-btn {
+      color: #64748b;
+      &.active { color: #818cf8; border-bottom-color: #818cf8; }
+      &:hover:not(.active) { background: #0f172a; color: #94a3b8; }
+      .badge { background: #4f46e5; }
+    }
+  }
+
+  .dialog-body { background: #0f172a; }
+
+  .info-grid {
+    background: #1e293b;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  }
+  .info-item {
+    border-bottom-color: #334155;
+    &:hover { background: #1e1b4b; }
+    mat-icon { color: #818cf8; }
+    label { color: #64748b; }
+    span  { color: #e2e8f0; }
+  }
+
+  .project-card {
+    background: #1e293b;
+    border-left-color: #818cf8;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+    .proj-name { color: #f1f5f9; }
+    .proj-status {
+      &.active    { background: #1e3a5f; color: #60a5fa; }
+      &.completed { background: #14532d; color: #4ade80; }
+      &.pending   { background: #431407; color: #fb923c; }
+    }
+  }
+  .proj-detail-item {
+    color: #94a3b8;
+    mat-icon { color: #475569; }
+  }
+
+  .sub-card {
+    background: #1e293b;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+    .sub-info {
+      strong { color: #f1f5f9; }
+      span   { color: #94a3b8; }
+      .sub-dept { color: #64748b; }
+    }
+    .sub-count { color: #64748b; }
+  }
+
+  .empty-state { color: #475569; }
+}

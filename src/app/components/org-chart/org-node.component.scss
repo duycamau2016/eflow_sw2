@@ -335,3 +335,46 @@
     @media (max-width: 600px) { height: 16px; }
   }
 }
+
+// -------------------------------------------------------
+// Dark theme
+// -------------------------------------------------------
+:host-context(.dark-theme) {
+  .node-card {
+    background: #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+    &:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+      border-color: #818cf8;
+    }
+  }
+
+  .node-name     { color: #f1f5f9; }
+  .node-position { color: #818cf8; }
+  .node-dept     { color: #64748b; }
+
+  .node-stats .stat-badge {
+    &.projects { background: #1e3a5f; color: #60a5fa; }
+    &.people   { background: #3b0764; color: #e879f9; }
+  }
+
+  .node-projects       { border-top-color: #334155; }
+  .node-projects-header { color: #60a5fa; }
+  .node-project-item   { background: #0f172a; }
+  .proj-label          { color: #e2e8f0; }
+  .proj-role           { color: #64748b; }
+  .node-projects-more  { color: #475569; }
+
+  .expand-btn {
+    background: #1e293b;
+    border-color: #334155;
+    mat-icon { color: #94a3b8; }
+    &:hover { border-color: #818cf8; background: #1e1b4b; mat-icon { color: #818cf8; } }
+  }
+
+  .click-hint mat-icon { color: #475569; }
+
+  .children-connector          { background: #334155; }
+  .children-row::before        { background: #334155; }
+  .child-branch .branch-line   { background: #334155; }
+}

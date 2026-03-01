@@ -10,6 +10,34 @@ body {
   font-family: 'Segoe UI', Roboto, Arial, sans-serif;
   background: #f0f2f5;
   color: #333;
+  transition: background 0.3s, color 0.3s;
+}
+
+body.dark-theme {
+  background: #0f172a;
+  color: #f1f5f9;
+
+  // Material dialog overlay dark
+  .mat-dialog-container {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+  }
+
+  // Scrollbar dark
+  ::-webkit-scrollbar-track { background: #1e293b; }
+  ::-webkit-scrollbar-thumb { background: #475569; }
+  ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+  // Material menu dark (pos-filter-menu)
+  .pos-filter-menu .mat-menu-panel {
+    background: #1e293b;
+    .pm-header { border-bottom-color: #334155; color: #f1f5f9; }
+    .pm-search { border-bottom-color: #334155; mat-icon { color: #475569; }
+      input { color: #f1f5f9; &::placeholder { color: #475569; } }
+    }
+    .pm-option { color: #e2e8f0; &:hover { background: #334155; } }
+    .pm-empty  { color: #64748b; }
+  }
 }
 
 ::-webkit-scrollbar {

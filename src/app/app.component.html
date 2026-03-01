@@ -1,4 +1,4 @@
-<div class="app-layout">
+<div class="app-layout" [class.dark-theme]="isDarkTheme">
   <!-- Top Navigation Bar -->
   <mat-toolbar class="app-toolbar" color="primary">
     <div class="toolbar-left">
@@ -40,6 +40,16 @@
 
       <button
         mat-icon-button
+        class="theme-toggle-btn"
+        [title]="isDarkTheme ? 'Chuyển Light mode' : 'Chuyển Dark mode'"
+        [matTooltip]="isDarkTheme ? 'Light mode' : 'Dark mode'"
+        (click)="toggleTheme()"
+      >
+        <mat-icon>{{ isDarkTheme ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
+      <button
+        mat-icon-button
         title="Xóa dữ liệu"
         (click)="onClearData()"
         *ngIf="hasData"
@@ -49,69 +59,124 @@
     </div>
   </mat-toolbar>
 
-  <!-- Main Content -->
+  <!-- Body: Sidenav + Content -->
   <div class="app-body">
 
-    <!-- Import Panel (Collapsible) -->
-    <div
-      class="import-panel"
-      [class.collapsed]="!showImportPanel"
-      *ngIf="!hasData || showImportPanel"
-    >
-      <div class="import-panel-header" *ngIf="hasData">
-        <h3><mat-icon>upload_file</mat-icon> Import file Excel</h3>
-        <button mat-icon-button (click)="showImportPanel = false">
-          <mat-icon>close</mat-icon>
-        </button>
+    <!-- Left Sidebar Menu -->
+    <nav class="side-nav">
+      <div class="nav-section-label">MENU</div>
+
+      <!-- Tổ chức -->
+      <button
+        class="nav-item"
+        [class.active]="activeMenu === 'orgchart'"
+        (click)="selectMenu('orgchart')"
+        matTooltip="Sơ đồ tổ chức"
+        matTooltipPosition="right"
+        aria-label="Sơ đồ tổ chức"
+      >
+        <mat-icon>account_tree</mat-icon>
+        <span class="nav-label">Tổ chức</span>
+        <mat-icon class="nav-loading-icon" aria-label="Đang tải dữ liệu tổ chức" *ngIf="isSampleLoading && activeMenu !== 'orgchart'">hourglass_empty</mat-icon>
+      </button>
+
+      <!-- Import Excel -->
+      <button
+        class="nav-item"
+        [class.active]="activeMenu === 'import'"
+        (click)="selectMenu('import')"
+        matTooltip="Import file Excel"
+        matTooltipPosition="right"
+      >
+        <mat-icon>upload_file</mat-icon>
+        <span class="nav-label">Import</span>
+      </button>
+
+      <div class="nav-divider"></div>
+
+      <!-- Xóa dữ liệu -->
+      <button
+        class="nav-item nav-item-danger"
+        *ngIf="hasData"
+        (click)="onClearData()"
+        matTooltip="Xóa dữ liệu hiện tại"
+        matTooltipPosition="right"
+      >
+        <mat-icon>delete_outline</mat-icon>
+        <span class="nav-label">Xóa</span>
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+      <!-- Loading overlay khi đang tải sample -->
+      <div class="sample-loading-overlay" *ngIf="isSampleLoading">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>Đang tải dữ liệu tổ chức...</p>
       </div>
 
-      <!-- Welcome screen when no data -->
-      <div class="welcome-section" *ngIf="!hasData">
-        <div class="welcome-hero">
-          <mat-icon class="hero-icon">account_tree</mat-icon>
-          <h1>Sơ đồ Phân cấp Nhân sự SW2</h1>
-          <p>Import file Excel để xây dựng và hiển thị sơ đồ tổ chức của doanh nghiệp</p>
+      <!-- Import Panel (Collapsible) -->
+      <div
+        class="import-panel"
+        [class.collapsed]="!showImportPanel"
+        *ngIf="!hasData || (activeMenu === 'import' && showImportPanel)"
+      >
+        <div class="import-panel-header" *ngIf="hasData">
+          <h3><mat-icon>upload_file</mat-icon> Import file Excel</h3>
+          <button mat-icon-button (click)="showImportPanel = false">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
 
-        <div class="features-grid">
-          <div class="feature-card">
-            <mat-icon>upload_file</mat-icon>
-            <h4>Import Excel</h4>
-            <p>Hỗ trợ .xlsx, .xls với cấu trúc sheet Nhân sự & Dự án</p>
+        <!-- Welcome screen when no data -->
+        <div class="welcome-section" *ngIf="!hasData && !isSampleLoading">
+          <div class="welcome-hero">
+            <mat-icon class="hero-icon">account_tree</mat-icon>
+            <h1>Sơ đồ Phân cấp Nhân sự SW2</h1>
+            <p>Chọn <strong>Tổ chức</strong> từ menu để tải dữ liệu mẫu, hoặc import file Excel của bạn</p>
           </div>
-          <div class="feature-card">
-            <mat-icon>account_tree</mat-icon>
-            <h4>Sơ đồ phân cấp</h4>
-            <p>Hiển thị cây tổ chức theo cấp bậc quản lý</p>
+
+          <div class="features-grid">
+            <div class="feature-card" (click)="selectMenu('orgchart')" style="cursor:pointer">
+              <mat-icon>account_tree</mat-icon>
+              <h4>Tải dữ liệu mẫu</h4>
+              <p>55 nhân viên, 6 dự án – sẵn có, click để xem ngay</p>
+            </div>
+            <div class="feature-card">
+              <mat-icon>upload_file</mat-icon>
+              <h4>Import Excel</h4>
+              <p>Hỗ trợ .xlsx, .xls với cấu trúc sheet Nhân sự &amp; Dự án</p>
+            </div>
+            <div class="feature-card">
+              <mat-icon>info</mat-icon>
+              <h4>Chi tiết nhân sự</h4>
+              <p>Click vào node để xem thông tin chi tiết, dự án, cấp dưới</p>
+            </div>
+            <div class="feature-card">
+              <mat-icon>search</mat-icon>
+              <h4>Tìm kiếm</h4>
+              <p>Tìm nhanh nhân viên theo tên, phòng ban, chức vụ</p>
+            </div>
           </div>
-          <div class="feature-card">
-            <mat-icon>info</mat-icon>
-            <h4>Chi tiết nhân sự</h4>
-            <p>Click vào node để xem thông tin chi tiết, dự án, cấp dưới</p>
-          </div>
-          <div class="feature-card">
-            <mat-icon>search</mat-icon>
-            <h4>Tìm kiếm</h4>
-            <p>Tìm nhanh nhân viên theo tên, phòng ban, chức vụ</p>
-          </div>
+        </div>
+
+        <div class="import-form-section">
+          <app-excel-import
+            (importDone)="onImportDone($event)"
+            (resetDone)="onClearData()"
+          ></app-excel-import>
         </div>
       </div>
 
-      <div class="import-form-section">
-        <app-excel-import
-          (importDone)="onImportDone($event)"
-          (resetDone)="onClearData()"
-        ></app-excel-import>
+      <!-- Org Chart -->
+      <div class="chart-section" *ngIf="hasData && !isSampleLoading">
+        <app-org-chart
+          [orgTree]="orgTree"
+          [allEmployees]="allEmployees"
+        ></app-org-chart>
       </div>
-    </div>
 
-    <!-- Org Chart -->
-    <div class="chart-section" *ngIf="hasData">
-      <app-org-chart
-        [orgTree]="orgTree"
-        [allEmployees]="allEmployees"
-      ></app-org-chart>
     </div>
-
   </div>
 </div>
