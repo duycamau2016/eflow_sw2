@@ -130,7 +130,7 @@ export class ProjectManagementComponent implements OnChanges {
     const map = new Map<string, ProjectInfo>();
 
     for (const emp of this.allEmployees) {
-      for (const proj of emp.projects) {
+      for (const proj of (emp.projects ?? [])) {
         const key = proj.name.trim();
         if (!map.has(key)) {
           map.set(key, {

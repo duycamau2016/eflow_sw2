@@ -154,7 +154,7 @@
   </div>
   <div class="search-result-bar hint-bar" *ngIf="!searchQuery">
     <mat-icon>touch_app</mat-icon>
-    <span class="hint-desktop">Click vào node để xem chi tiết · Cuộn để xem toàn bộ sơ đồ · Ctrl + Wheel để zoom</span>
+    <span class="hint-desktop">Click vào node để xem chi tiết · Kéo chuột để di chuyển · Ctrl + Wheel để zoom</span>
     <span class="hint-mobile">Chạm để xem chi tiết · Vuốt để cuộn · Chụm để zoom</span>
   </div>
 
@@ -171,6 +171,7 @@
     (touchmove)="onTouchMove($event)"
     (touchend)="onTouchEnd()"
     [class.panning]="isPanning"
+    [class.has-dragged]="hasDragged"
   >
     <div
       class="chart-canvas"

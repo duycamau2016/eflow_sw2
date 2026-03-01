@@ -26,10 +26,10 @@
     </div>
 
     <!-- Projects list -->
-    <div class="node-projects" *ngIf="node.employee.projects.length > 0">
+    <div class="node-projects" *ngIf="node.employee.projects?.length">
       <div class="node-projects-header">
         <mat-icon>work</mat-icon>
-        <span>Dự án ({{ node.employee.projects.length }})</span>
+        <span>Dự án ({{ node.employee.projects!.length }})</span>
       </div>
       <div class="node-projects-body">
         <div
@@ -42,8 +42,8 @@
           <span class="proj-label">{{ proj.name }}</span>
           <span class="proj-role">{{ proj.role }}</span>
         </div>
-        <div class="node-projects-more" *ngIf="node.employee.projects.length > 3">
-          +{{ node.employee.projects.length - 3 }} dự án khác
+        <div class="node-projects-more" *ngIf="node.employee.projects!.length > 3">
+          +{{ node.employee.projects!.length - 3 }} dự án khác
         </div>
       </div>
     </div>

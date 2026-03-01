@@ -216,7 +216,7 @@ export class EmployeeManagementComponent implements OnChanges {
       managerId: this.form.managerId || null,
       joinDate:  this.form.joinDate ?? '',
       level:     0,
-      projects:  (this.form.projects ?? []) as Project[],
+      projects:  (this.form.projects?.length ? this.form.projects as Project[] : null),
       children:  [],
       avatar:    ''
     };

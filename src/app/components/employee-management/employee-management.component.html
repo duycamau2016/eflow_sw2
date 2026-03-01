@@ -103,7 +103,7 @@
             <td class="col-joindate">{{ emp.joinDate || '—' }}</td>
             <td class="col-projects">
               <span class="em-proj-count" *ngIf="emp.projects?.length">
-                <mat-icon>work</mat-icon>{{ emp.projects.length }}
+                <mat-icon>work</mat-icon>{{ emp.projects!.length }}
               </span>
               <span *ngIf="!emp.projects?.length" class="em-no-proj">—</span>
             </td>
@@ -225,9 +225,9 @@
 
           <!-- Projects -->
           <div class="em-view-section">
-            <h4><mat-icon>work</mat-icon> Dự án tham gia ({{ emp.projects?.length ?? 0 }})</h4>
-            <div class="em-no-data" *ngIf="!emp.projects?.length">Chưa tham gia dự án nào</div>
-            <div class="em-proj-list" *ngIf="emp.projects?.length">
+            <h4><mat-icon>work</mat-icon> Dự án tham gia ({{ emp?.projects?.length ?? 0 }})</h4>
+            <div class="em-no-data" *ngIf="!emp?.projects?.length">Chưa tham gia dự án nào</div>
+            <div class="em-proj-list" *ngIf="emp?.projects?.length">
               <div class="em-proj-item" *ngFor="let p of emp.projects">
                 <div class="em-proj-top">
                   <span class="em-proj-name">{{ p.name }}</span>

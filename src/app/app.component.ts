@@ -100,7 +100,7 @@ export class AppComponent {
 
   private computeStats(): void {
     const depts = new Set(this.allEmployees.map(e => e.department).filter(Boolean));
-    const allProjects = this.allEmployees.flatMap(e => e.projects);
+    const allProjects = this.allEmployees.flatMap(e => e.projects ?? []);
     const projNames = new Set(allProjects.map(p => p.name).filter(Boolean));
     const maxLevel = this.allEmployees.reduce((max, e) => Math.max(max, e.level), 0);
 

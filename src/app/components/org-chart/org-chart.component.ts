@@ -55,6 +55,7 @@ export class OrgChartComponent implements OnChanges {
 
   // Pan state (mouse)
   isPanning = false;
+  hasDragged = false;
   private panStartX = 0;
   private panStartY = 0;
   private panScrollLeft = 0;
@@ -275,10 +276,10 @@ export class OrgChartComponent implements OnChanges {
   // Pan: click + drag to scroll
   // -------------------------------------------------------
   onPanStart(event: MouseEvent): void {
-    // Chỉ pan bằng middle click hoặc Alt+left click
-    if (event.button === 1 || event.altKey) {
-      event.preventDefault();
+    // Left click, middle click hoặc Alt+left click
+    if (event.button === 0 || event.button === 1 || event.altKey) {
       this.isPanning = true;
+      this.hasDragged = false;
       const el = this.chartWrapperRef.nativeElement;
       this.panStartX = event.clientX;
       this.panStartY = event.clientY;
@@ -289,14 +290,23 @@ export class OrgChartComponent implements OnChanges {
 
   onPanMove(event: MouseEvent): void {
     if (!this.isPanning) return;
-    event.preventDefault();
-    const el = this.chartWrapperRef.nativeElement;
-    el.scrollLeft = this.panScrollLeft - (event.clientX - this.panStartX);
-    el.scrollTop  = this.panScrollTop  - (event.clientY - this.panStartY);
+    const dx = event.clientX - this.panStartX;
+    const dy = event.clientY - this.panStartY;
+    if (!this.hasDragged && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+      this.hasDragged = true;
+    }
+    if (this.hasDragged) {
+      event.preventDefault();
+      const el = this.chartWrapperRef.nativeElement;
+      el.scrollLeft = this.panScrollLeft - dx;
+      el.scrollTop  = this.panScrollTop  - dy;
+    }
   }
 
   onPanEnd(): void {
     this.isPanning = false;
+    // Reset hasDragged sau 1 tick để không chặn click
+    setTimeout(() => { this.hasDragged = false; }, 0);
   }
 
   // -------------------------------------------------------

@@ -111,7 +111,7 @@ export class ExcelImportService {
               managerId: row[6] ? String(row[6]).trim() : null,
               joinDate: this.formatDate(row[7]),
               level: 0,
-              projects: projectMap.get(id) || [],
+              projects: projectMap.get(id) || null,
               children: [],
               avatar: this.generateAvatar(String(row[1] || ''))
             };
@@ -345,7 +345,7 @@ export class ExcelImportService {
         managerId: row[6] ? String(row[6]).trim() : null,
         joinDate: this.formatDate(row[7]),
         level: 0,
-        projects: projectMap.get(id) || [],
+        projects: projectMap.get(id) || null,
         children: [],
         avatar: this.generateAvatar(String(row[1] || ''))
       });
@@ -373,7 +373,7 @@ export class ExcelImportService {
 
   updateEmployee(emp: Employee): void {
     const current = this.employeesSubject.getValue();
-    const updated = current.map(e => e.id === emp.id ? { ...emp, projects: emp.projects ?? e.projects } : e);
+    const updated = current.map(e => e.id === emp.id ? { ...emp } : e);
     const tree = this.buildOrgTree(updated);
     this.employeesSubject.next(updated);
     this.orgTreeSubject.next(tree);

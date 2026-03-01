@@ -615,6 +615,7 @@
   scrollbar-width: thin;
   scrollbar-color: #b0bec5 #f0f2f5;
   touch-action: pan-x pan-y; // cho phép scroll cảm ứng trên mobile
+  cursor: grab;
 
   @media (max-width: 600px) {
     padding: 16px 8px 48px;

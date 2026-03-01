@@ -40,7 +40,7 @@ export class ExportService {
        'Ngày bắt đầu', 'Ngày kết thúc', 'Trạng thái']
     ];
     employees.forEach(e => {
-      e.projects.forEach(p => {
+      (e.projects ?? []).forEach(p => {
         projRows.push([
           e.id, e.name, e.department,
           p.name, p.role,
@@ -63,7 +63,7 @@ export class ExportService {
       hierarchyRows.push([
         indent + e.name,
         e.id, e.name, e.position, e.department,
-        String(e.projects.length),
+        String(e.projects?.length ?? 0),
         String(e.subordinatesCount ?? 0)
       ]);
     });

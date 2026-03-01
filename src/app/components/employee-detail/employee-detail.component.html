@@ -26,7 +26,7 @@
     >
       <mat-icon>work</mat-icon>
       Dự án
-      <span class="badge" *ngIf="data.employee.projects.length > 0">{{ data.employee.projects.length }}</span>
+      <span class="badge" *ngIf="data.employee.projects?.length">{{ data.employee.projects!.length }}</span>
     </button>
     <button
       class="tab-btn"
@@ -99,11 +99,11 @@
 
     <!-- Tab: Dự án -->
     <div *ngIf="activeTab === 'projects'" class="tab-content">
-      <div *ngIf="data.employee.projects.length === 0" class="empty-state">
+      <div *ngIf="!data.employee.projects?.length" class="empty-state">
         <mat-icon>work_off</mat-icon>
         <p>Chưa có thông tin dự án</p>
       </div>
-      <div class="project-list" *ngIf="data.employee.projects.length > 0">
+      <div class="project-list" *ngIf="data.employee.projects?.length">
         <div class="project-card" *ngFor="let proj of data.employee.projects">
           <div class="proj-header">
             <span class="proj-name">{{ proj.name }}</span>

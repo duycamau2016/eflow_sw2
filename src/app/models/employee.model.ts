@@ -18,7 +18,7 @@ export interface Employee {
   avatar?: string;
   level: number;
   joinDate?: string;
-  projects: Project[];
+  projects: Project[] | null;
   children?: Employee[];
   // Computed properties
   subordinatesCount?: number;
