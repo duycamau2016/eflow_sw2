@@ -33,6 +33,7 @@ import { EmployeeDetailComponent } from './components/employee-detail/employee-d
 import { ProjectManagementComponent } from './components/project-management/project-management.component';
 import { EmployeeManagementComponent } from './components/employee-management/employee-management.component';
 import { LoginComponent } from './components/login/login.component';
+import { SearchableSelectComponent } from './components/searchable-select/searchable-select.component';
 
 @NgModule({
   declarations: [
@@ -43,7 +44,8 @@ import { LoginComponent } from './components/login/login.component';
     EmployeeDetailComponent,
     ProjectManagementComponent,
     EmployeeManagementComponent,
-    LoginComponent
+    LoginComponent,
+    SearchableSelectComponent
   ],
   imports: [
     BrowserModule,

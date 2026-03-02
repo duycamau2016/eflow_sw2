@@ -1,0 +1,39 @@
+<div class="ss-wrapper" [class.ss-open]="isOpen">
+  <!-- Trigger -->
+  <div class="ss-trigger" #triggerEl (click)="toggle()">
+    <span class="ss-selected-label" [class.ss-placeholder]="!hasValue">{{ selectedLabel }}</span>
+    <mat-icon class="ss-chevron">{{ isOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+  </div>
+
+  <!-- Dropdown panel (fixed-positioned, escapes all overflow:hidden ancestors) -->
+  <div class="ss-panel" *ngIf="isOpen" [ngStyle]="panelStyles">
+    <div class="ss-search">
+      <mat-icon>search</mat-icon>
+      <input
+        #searchInput
+        type="text"
+        [(ngModel)]="searchQuery"
+        [placeholder]="searchPlaceholder"
+        (click)="$event.stopPropagation()"
+      />
+      <mat-icon class="ss-clear" *ngIf="searchQuery" (click)="searchQuery = ''; $event.stopPropagation()">close</mat-icon>
+    </div>
+    <div class="ss-list">
+      <div
+        class="ss-option ss-null-option"
+        *ngIf="nullOption !== null && !searchQuery"
+        [class.ss-selected]="value === null || value === '' || value === undefined"
+        (click)="select(null)"
+      >{{ nullOption }}</div>
+      <div
+        class="ss-option"
+        *ngFor="let opt of filteredOptions"
+        [class.ss-selected]="opt.value == value"
+        (click)="select(opt.value)"
+      >{{ opt.label }}</div>
+      <div class="ss-no-results" *ngIf="filteredOptions.length === 0 && searchQuery">
+        <mat-icon>search_off</mat-icon> Không tìm thấy
+      </div>
+    </div>
+  </div>
+</div>

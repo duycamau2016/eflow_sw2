@@ -53,13 +53,23 @@ Truy cập: **http://localhost:4200**
 ### 📁 Quản lý Dự án
 - Xem tất cả dự án dạng danh sách + sơ đồ thành viên
 - Tìm kiếm & lọc theo trạng thái (Đang thực hiện / Chờ / Hoàn thành)
+- **Trạng thái dự án độc lập** — không phụ thuộc vào trạng thái từng assignment
 - CRUD đầy đủ:
-  - **Tạo dự án** mới và thêm thành viên đầu tiên
-  - **Thêm thành viên** vào dự án hiện có
-  - **Sửa** vai trò, ngày, trạng thái của từng assignment
-  - **Đổi tên** dự án (cập nhật toàn bộ assignment)
+  - **Tạo dự án** mới (chọn tên + trạng thái)
+  - **Thêm thành viên** vào dự án hiện có (chọn qua dropdown tìm kiếm)
+  - **Sửa** vai trò, ngày của từng assignment
+  - **Đổi tên & trạng thái** dự án (cập nhật toàn bộ assignment)
   - **Xoá** dự án hoặc từng thành viên khỏi dự án
 - Chế độ xem: Sơ đồ cây (org-chart) hoặc Bảng danh sách
+
+### 🔍 Searchable Select (Dropdown tìm kiếm)
+- Component `app-searchable-select` dùng chung cho toàn bộ ứng dụng
+- Click vào ô mới hiển thị dropdown (không phải luôn mở)
+- Có ô tìm kiếm nhanh trong dropdown
+- `position: fixed` — thoát khỏi mọi `overflow: hidden` của ancestor
+- Tự động mở lên trên nếu không đủ chỗ phía dưới viewport
+- Hỗ trợ light & dark theme
+- Dùng tại: chọn nhân viên (PM), trạng thái dự án (PM), quản lý trực tiếp (EM), trạng thái dự án trong form EM
 
 ### 📥 Import Excel
 - Import file `.xlsx` / `.xls`
@@ -126,8 +136,7 @@ src/
         ├── org-chart/              # Sơ đồ tổ chức (container + recursive node)
         ├── employee-detail/        # Dialog chi tiết nhân viên
         ├── employee-management/    # CRUD nhân sự (bảng + form)
-        ├── project-management/     # CRUD dự án (sidebar list + tree/table view + form panel)
-        └── login/                  # Dialog đăng nhập (hỗ trợ dark/light theme)
+        ├── project-management/     # CRUD dự án (sidebar list + tree/table view + form panel)        ├── searchable-select/      # Reusable dropdown có tìm kiếm (click-to-open, fixed position)        └── login/                  # Dialog đăng nhập (hỗ trợ dark/light theme)
 ```
 
 ---

@@ -280,10 +280,31 @@
   align-items: center;
   justify-content: center;
   color: #bdbdbd;
-  gap: 12px;
+  gap: 10px;
 
-  mat-icon { font-size: 56px; width: 56px; height: 56px; }
-  p { font-size: 14px; margin: 0; }
+  .pm-no-sel-icon { font-size: 52px; width: 52px; height: 52px; opacity: 0.5; }
+  p { font-size: 14px; margin: 0; text-align: center; line-height: 1.5; }
+
+  .pm-no-sel-or {
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 2px 0;
+  }
+
+  .pm-no-sel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    width: auto;
+    min-width: unset;
+    white-space: nowrap;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  }
 }
 
 .pm-detail-header {
@@ -1376,6 +1397,54 @@
   font-weight: 500;
 }
 
+.pm-searchable-select {
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &:focus-within { border-color: #4f46e5; }
+
+  .pm-select-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-bottom: 1px solid #e8eaf0;
+    background: #fafafa;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; color: #9e9e9e; flex-shrink: 0; }
+
+    input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      padding: 0;
+      background: transparent;
+      color: #333;
+      width: 100%;
+      box-sizing: border-box;
+      &::placeholder { color: #bdbdbd; }
+    }
+  }
+
+  select {
+    border: none !important;
+    border-radius: 0 !important;
+    background: #fff;
+    font-size: 13px;
+    outline: none;
+    padding: 4px 0;
+    width: 100%;
+    box-sizing: border-box;
+
+    option { padding: 6px 12px; }
+  }
+}
+
 .pm-field-error {
   font-size: 11px;
   color: #ef4444;
@@ -1467,6 +1536,18 @@
       &:focus { border-color: #818cf8; }
       option { background: #1e293b; }
     }
+  }
+
+  .pm-searchable-select {
+    border-color: #334155;
+    &:focus-within { border-color: #818cf8; }
+    .pm-select-search {
+      background: #0f172a;
+      border-bottom-color: #334155;
+      mat-icon { color: #475569; }
+      input { color: #f1f5f9; &::placeholder { color: #475569; } }
+    }
+    select { background: #0f172a; color: #f1f5f9; option { background: #1e293b; } }
   }
 
   .pm-form-readonly { background: #0f172a; color: #94a3b8; }

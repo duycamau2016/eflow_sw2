@@ -46,6 +46,25 @@ export class EmployeeManagementComponent implements OnChanges {
     return Array.from(s).sort((a, b) => a.localeCompare(b, 'vi'));
   }
 
+  get deptSelectOptions() {
+    return [
+      { value: 'all', label: 'Tất cả phòng ban' },
+      ...this.departments.map(d => ({ value: d, label: d }))
+    ];
+  }
+
+  get managerSelectOptions() {
+    return this.allEmployees
+      .filter(e => e.id !== this.form.id)
+      .map(e => ({ value: e.id, label: `${e.name} (${e.position ?? ''})` }));
+  }
+
+  readonly statusSelectOptions = [
+    { value: 'active',    label: 'Đang thực hiện' },
+    { value: 'pending',   label: 'Chờ triển khai'  },
+    { value: 'completed', label: 'Hoàn thành'       }
+  ];
+
   get filteredEmployees(): Employee[] {
     const q = this.searchQuery.toLowerCase();
     return this.allEmployees

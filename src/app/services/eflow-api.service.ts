@@ -192,4 +192,16 @@ export class EFlowApiService {
       )
       .pipe(map(() => void 0));
   }
+
+  /** PATCH /api/projects/by-name/{name}/status?status= - cập nhật trạng thái dự án độc lập */
+  updateProjectStatus(projectName: string, status: string): Observable<void> {
+    const params = new HttpParams().set('status', status);
+    return this.http
+      .patch<ApiResponse<void>>(
+        `${this.base}/projects/by-name/${encodeURIComponent(projectName)}/status`,
+        null,
+        { params }
+      )
+      .pipe(map(() => void 0));
+  }
 }

@@ -57,7 +57,7 @@ export class ProjectManagementComponent implements OnChanges {
   // ── Panel CRUD ────────────────────────────────────────────────────────────
   panelMode: PanelMode = 'closed';
   projectForm = { name: '', status: 'active' };
-  memberForm  = { employeeId: '', role: '', startDate: '', endDate: '', status: 'active' };
+  memberForm  = { employeeId: '', role: '', startDate: '', endDate: '' };
   editingAssignmentId: string | null = null;
   editingMemberEmployee: Employee | null = null;
   // Used in template – not private
@@ -79,6 +79,12 @@ export class ProjectManagementComponent implements OnChanges {
     { val: 'completed', label: 'Hoàn thành'       }
   ];
 
+  readonly statusSelectOptions = [
+    { value: 'active',    label: 'Đang thực hiện' },
+    { value: 'pending',   label: 'Chờ triển khai'  },
+    { value: 'completed', label: 'Hoàn thành'       }
+  ];
+
   constructor(
     private eflowApi: EFlowApiService,
     private excelService: ExcelImportService
@@ -87,6 +93,13 @@ export class ProjectManagementComponent implements OnChanges {
   get availableEmployees(): Employee[] {
     const memberIds = new Set((this.selectedProject?.members ?? []).map(m => m.employee.id));
     return this.allEmployees.filter(e => !memberIds.has(e.id));
+  }
+
+  get availableEmployeeOptions() {
+    return this.availableEmployees.map(e => ({
+      value: e.id,
+      label: `${e.name} – ${e.position ?? ''}`
+    }));
   }
 
   get totalTablePages(): number {
@@ -228,9 +241,7 @@ export class ProjectManagementComponent implements OnChanges {
         }
         const info = map.get(key)!;
         info.memberCount++;
-
-        const rank: Record<string, number> = { active: 2, pending: 1, completed: 0 };
-        if ((rank[proj.status] ?? 0) > (rank[info.status] ?? 0)) info.status = proj.status as any;
+        // Trạng thái dự án là độc lập, không dọn ra từ từng thành viên
 
         info.members.push({
           assignmentId: proj.id,
@@ -457,7 +468,7 @@ export class ProjectManagementComponent implements OnChanges {
         return;
       }
       this._pendingProjectName = name;
-      this.memberForm = { employeeId: '', role: '', startDate: '', endDate: '', status: 'active' };
+      this.memberForm = { employeeId: '', role: '', startDate: '', endDate: '' };
       this.editingAssignmentId    = null;
       this.editingMemberEmployee  = null;
       this.panelMode = 'add-member';
@@ -465,17 +476,32 @@ export class ProjectManagementComponent implements OnChanges {
     }
 
     if (!this.selectedProject) return;
-    const oldName = this.selectedProject.name;
-    if (name === oldName) { this.closePanel(); return; }
+    const oldName   = this.selectedProject.name;
+    const oldStatus = this.selectedProject.status;
+    const nameChanged   = name !== oldName;
+    const statusChanged = this.projectForm.status !== oldStatus;
+    if (!nameChanged && !statusChanged) { this.closePanel(); return; }
 
     this.isSaving = true;
-    this.eflowApi.renameProject(oldName, name).subscribe({
-      next: () => { this.isSaving = false; this.closePanel(); this.refreshData(); },
-      error: (err: any) => {
-        this.isSaving = false;
-        this.formErrors['name'] = err?.error?.message ?? 'Lỗi khi đổi tên dự án';
+
+    const doStatusUpdate = (currentName: string): void => {
+      if (!statusChanged) {
+        this.isSaving = false; this.closePanel(); this.refreshData(); return;
       }
-    });
+      this.eflowApi.updateProjectStatus(currentName, this.projectForm.status).subscribe({
+        next: () => { this.isSaving = false; this.closePanel(); this.refreshData(); },
+        error: (err: any) => { this.isSaving = false; this.formErrors['status'] = err?.error?.message ?? 'Lỗi cập nhật trạng thái'; }
+      });
+    };
+
+    if (nameChanged) {
+      this.eflowApi.renameProject(oldName, name).subscribe({
+        next: () => doStatusUpdate(name),
+        error: (err: any) => { this.isSaving = false; this.formErrors['name'] = err?.error?.message ?? 'Lỗi khi đổi tên dự án'; }
+      });
+    } else {
+      doStatusUpdate(oldName);
+    }
   }
 
   confirmDeleteProject(proj?: ProjectInfo, event?: Event): void {
@@ -508,7 +534,7 @@ export class ProjectManagementComponent implements OnChanges {
     this._pendingProjectName   = this.selectedProject?.name ?? '';
     this.editingAssignmentId   = null;
     this.editingMemberEmployee = null;
-    this.memberForm = { employeeId: '', role: '', startDate: '', endDate: '', status: 'active' };
+    this.memberForm = { employeeId: '', role: '', startDate: '', endDate: '' };
     this.formErrors = {};
     this.panelMode  = 'add-member';
   }
@@ -522,8 +548,7 @@ export class ProjectManagementComponent implements OnChanges {
       employeeId: member.employee.id,
       role:       member.role ?? '',
       startDate:  this.toInputDate(member.startDate),
-      endDate:    this.toInputDate(member.endDate),
-      status:     member.status
+      endDate:    this.toInputDate(member.endDate)
     };
     this.formErrors = {};
     this.panelMode  = 'edit-member';
@@ -547,7 +572,7 @@ export class ProjectManagementComponent implements OnChanges {
       role:       this.memberForm.role.trim(),
       startDate:  this.memberForm.startDate || undefined,
       endDate:    this.memberForm.endDate   || undefined,
-      status:     this.memberForm.status as any
+      status:     (this.selectedProject?.status ?? this.projectForm.status ?? 'active') as any
     };
 
     // If adding first member to a brand-new project, remember name for auto-select

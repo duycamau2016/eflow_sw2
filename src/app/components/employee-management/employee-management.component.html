@@ -27,10 +27,13 @@
 
         <div class="em-dept-filter">
           <mat-icon>business</mat-icon>
-          <select [(ngModel)]="deptFilter" (change)="page = 0">
-            <option value="all">Tất cả phòng ban</option>
-            <option *ngFor="let d of departments" [value]="d">{{ d }}</option>
-          </select>
+          <app-searchable-select
+            [options]="deptSelectOptions"
+            [(value)]="deptFilter"
+            (valueChange)="page = 0"
+            placeholder="Tất cả phòng ban"
+            searchPlaceholder="Tìm phòng ban...">
+          </app-searchable-select>
         </div>
 
         <div class="em-stats-chips">
@@ -166,8 +169,8 @@
           }}</span>
         </div>
         <div class="em-panel-actions" *ngIf="panelMode === 'view' && selectedEmployee">
-          <button mat-icon-button title="Chỉnh sửa" (click)="switchToEdit()"><mat-icon>edit</mat-icon></button>
-          <button mat-icon-button class="delete-btn" title="Xóa" (click)="confirmDelete(selectedEmployee.id)"><mat-icon>delete</mat-icon></button>
+          <button mat-icon-button title="Chỉnh sửa" (click)="switchToEdit()" *ngIf="isAdmin"><mat-icon>edit</mat-icon></button>
+          <button mat-icon-button class="delete-btn" title="Xóa" (click)="confirmDelete(selectedEmployee.id)" *ngIf="isAdmin"><mat-icon>delete</mat-icon></button>
           <button mat-icon-button title="Đóng" (click)="closePanel()"><mat-icon>close</mat-icon></button>
         </div>
         <button mat-icon-button title="Đóng" (click)="closePanel()" *ngIf="panelMode !== 'view'"><mat-icon>close</mat-icon></button>
@@ -288,14 +291,13 @@
               <div class="em-form-row">
                 <div class="em-form-field">
                   <label>Quản lý trực tiếp</label>
-                  <select [(ngModel)]="form.managerId" name="managerId">
-                    <option [ngValue]="null">— Không có —</option>
-                    <option
-                      *ngFor="let e of allEmployees"
-                      [value]="e.id"
-                      [disabled]="e.id === form.id"
-                    >{{ e.name }} ({{ e.position }})</option>
-                  </select>
+                  <app-searchable-select
+                    [options]="managerSelectOptions"
+                    [(value)]="form.managerId"
+                    [nullOption]="'— Không có —'"
+                    placeholder="— Không có —"
+                    searchPlaceholder="Tìm tên quản lý...">
+                  </app-searchable-select>
                 </div>
                 <div class="em-form-field">
                   <label>Ngày vào làm</label>
@@ -337,11 +339,12 @@
                 <input type="text" [(ngModel)]="newProject.role" name="npRole" placeholder="Vai trò" />
                 <input type="text" [(ngModel)]="newProject.startDate" name="npStart" placeholder="Bắt đầu (DD/MM/YYYY)" />
                 <input type="text" [(ngModel)]="newProject.endDate" name="npEnd" placeholder="Kết thúc (DD/MM/YYYY)" />
-                <select [(ngModel)]="newProject.status" name="npStatus">
-                  <option value="active">Đang thực hiện</option>
-                  <option value="pending">Chờ triển khai</option>
-                  <option value="completed">Hoàn thành</option>
-                </select>
+                <app-searchable-select
+                  [options]="statusSelectOptions"
+                  [(value)]="newProject.status"
+                  placeholder="Trạng thái"
+                  searchPlaceholder="Tìm trạng thái...">
+                </app-searchable-select>
                 <button type="button" mat-flat-button color="primary" (click)="addProjectToForm()">Thêm</button>
               </div>
 
