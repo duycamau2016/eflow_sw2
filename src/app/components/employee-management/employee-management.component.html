@@ -122,10 +122,13 @@
                 </ng-container>
                 <ng-template #confirmTpl>
                   <span class="em-confirm-del">Xóa?</span>
-                  <button mat-icon-button class="em-action-btn confirm" title="Xác nhận xóa" (click)="doDelete(emp.id)">
-                    <mat-icon>check</mat-icon>
+                  <button mat-icon-button class="em-action-btn confirm" title="Xác nhận xóa"
+                    (click)="doDelete(emp.id)" [disabled]="deletingId === emp.id">
+                    <mat-spinner *ngIf="deletingId === emp.id" diameter="16" class="em-btn-spinner"></mat-spinner>
+                    <mat-icon *ngIf="deletingId !== emp.id">check</mat-icon>
                   </button>
-                  <button mat-icon-button class="em-action-btn cancel" title="Hủy" (click)="cancelDelete()">
+                  <button mat-icon-button class="em-action-btn cancel" title="Hủy"
+                    (click)="cancelDelete()" [disabled]="deletingId === emp.id">
                     <mat-icon>close</mat-icon>
                   </button>
                 </ng-template>
@@ -186,8 +189,13 @@
           <div class="em-delete-bar" *ngIf="deleteConfirmId === emp.id">
             <mat-icon>warning</mat-icon>
             <span>Xác nhận xóa nhân viên <strong>{{ emp.name }}</strong>?</span>
-            <button mat-flat-button color="warn" (click)="doDelete(emp.id)">Xóa</button>
-            <button mat-stroked-button (click)="cancelDelete()">Hủy</button>
+            <button mat-flat-button color="warn" (click)="doDelete(emp.id)"
+              [disabled]="deletingId === emp.id" class="em-save-btn">
+              <mat-spinner *ngIf="deletingId === emp.id" diameter="16" class="em-btn-spinner"></mat-spinner>
+              <ng-container *ngIf="deletingId !== emp.id">Xóa</ng-container>
+              <ng-container *ngIf="deletingId === emp.id">Đang xóa...</ng-container>
+            </button>
+            <button mat-stroked-button (click)="cancelDelete()" [disabled]="deletingId === emp.id">Hủy</button>
           </div>
 
           <!-- Avatar + name block -->
@@ -367,10 +375,16 @@
 
             <!-- Footer buttons -->
             <div class="em-form-footer">
-              <button type="button" mat-stroked-button (click)="closePanel()">Hủy</button>
-              <button type="submit" mat-flat-button color="primary">
-                <mat-icon>save</mat-icon>
-                {{ panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi' }}
+              <button type="button" mat-stroked-button (click)="closePanel()" [disabled]="isSaving">Hủy</button>
+              <button type="submit" mat-flat-button color="primary" [disabled]="isSaving" class="em-save-btn">
+                <ng-container *ngIf="!isSaving">
+                  <mat-icon>save</mat-icon>
+                  {{ panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi' }}
+                </ng-container>
+                <ng-container *ngIf="isSaving">
+                  <mat-spinner diameter="18" class="em-btn-spinner"></mat-spinner>
+                  Đang lưu...
+                </ng-container>
               </button>
             </div>
           </form>

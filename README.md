@@ -115,6 +115,21 @@ File Excel cần có **2 sheet**:
 
 ---
 
+## ✨ Tính năng
+
+- ✅ Import file Excel (.xlsx, .xls)
+- ✅ Hiển thị sơ đồ phân cấp dạng cây
+- ✅ Click vào node để xem thông tin chi tiết
+- ✅ Xem dự án và nhân viên cấp dưới
+- ✅ Tìm kiếm nhân viên
+- ✅ Zoom in/out sơ đồ
+- ✅ Thu gọn/mở rộng nhánh
+- ✅ Tải file Excel mẫu
+- ✅ Thống kê tổng quan
+- ✅ Loading overlay khi tải dữ liệu mẫu
+- ✅ Loading spinner trên nút Lưu (tạo/cập nhật nhân viên)
+- ✅ Loading spinner trên nút Xác nhận Xóa nhân viên
+
 ## 🏗️ Kiến trúc
 
 ```

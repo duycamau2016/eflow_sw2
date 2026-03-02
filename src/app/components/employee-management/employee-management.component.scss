@@ -970,3 +970,19 @@
   .em-form-footer { border-top-color: #334155; }
   .em-no-data { color: #475569; }
 }
+
+// ── Loading / spinner inside buttons ─────────────────────────────
+.em-save-btn, .em-action-btn.confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  .em-btn-spinner {
+    display: inline-flex;
+    align-items: center;
+
+    ::ng-deep circle {
+      stroke: currentColor;
+    }
+  }
+}

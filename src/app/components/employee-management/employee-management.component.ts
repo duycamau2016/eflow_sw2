@@ -24,8 +24,11 @@ export class EmployeeManagementComponent implements OnChanges {
   // ─── Panel state ─────────────────────────────────────────────
   panelMode: PanelMode = 'closed';
   selectedEmployee: Employee | null = null;
-  deleteConfirmId: string | null = null;  isSaving    = false;
-  isDeleting: string | null = null;
+  deleteConfirmId: string | null = null;
+
+  // ─── Loading state ───────────────────────────────────────────
+  isSaving = false;
+  deletingId: string | null = null;
   // ─── Form ─────────────────────────────────────────────────
   form: Partial<Employee> = {};
   formErrors: Record<string, string> = {};
@@ -280,16 +283,16 @@ export class EmployeeManagementComponent implements OnChanges {
   cancelDelete(): void { this.deleteConfirmId = null; }
 
   doDelete(id: string): void {
-    this.isDeleting = id;
+    this.deletingId = id;
     this.excelService.deleteEmployee(id).subscribe({
       next: () => {
-        this.isDeleting = null;
+        this.deletingId = null;
         if (this.selectedEmployee?.id === id) this.closePanel();
         this.deleteConfirmId = null;
         if (this.page >= this.totalPages) this.page = Math.max(0, this.totalPages - 1);
       },
       error: () => {
-        this.isDeleting = null;
+        this.deletingId = null;
         this.deleteConfirmId = null;
       }
     });
