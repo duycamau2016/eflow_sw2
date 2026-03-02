@@ -36,6 +36,52 @@ export interface OrgNodeApiDTO {
   children: OrgNodeApiDTO[];
 }
 
+export interface ProjectInfoApiDTO {
+  id?: number;
+  projectName: string;
+  customer?: string;
+  contractNumber?: string;
+  description?: string;
+  startDate?: string;           // ISO yyyy-MM-dd
+  endDate?: string;             // ISO yyyy-MM-dd
+  contractValue?: number;       // VNĐ
+  plannedCost?: number;         // VNĐ
+  actualCost?: number;          // VNĐ
+  // Calculated (read-only, server-side)
+  totalInvoiced?: number;
+  totalPaid?: number;
+  profitMargin?: number;        // %
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface InvoiceMilestoneApiDTO {
+  id?: number;
+  projectName: string;
+  name: string;
+  amount?: number;              // VNĐ
+  plannedDate?: string;         // ISO yyyy-MM-dd
+  actualDate?: string;          // ISO yyyy-MM-dd
+  status: 'pending' | 'invoiced' | 'paid';
+  note?: string;
+  sortOrder: number;
+  overdue?: boolean;            // read-only, server-side
+}
+
+export interface ProjectPhaseApiDTO {
+  id?: number;
+  projectName: string;
+  name: string;
+  plannedStart?: string;        // ISO yyyy-MM-dd
+  plannedEnd?: string;          // ISO yyyy-MM-dd
+  actualStart?: string;         // ISO yyyy-MM-dd
+  actualEnd?: string;           // ISO yyyy-MM-dd
+  progress: number;             // 0–100
+  status: 'on_track' | 'at_risk' | 'delayed' | 'completed';
+  note?: string;
+  sortOrder: number;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -202,6 +248,103 @@ export class EFlowApiService {
         null,
         { params }
       )
+      .pipe(map(() => void 0));
+  }
+
+  // ─── Project Finance Info ─────────────────────────────────────────────────
+
+  /** GET /api/project-info */
+  getAllProjectInfos(): Observable<ProjectInfoApiDTO[]> {
+    return this.http
+      .get<ApiResponse<ProjectInfoApiDTO[]>>(`${this.base}/project-info`)
+      .pipe(map(r => r.data ?? []));
+  }
+
+  /** GET /api/project-info/{projectName} */
+  getProjectInfo(projectName: string): Observable<ProjectInfoApiDTO> {
+    return this.http
+      .get<ApiResponse<ProjectInfoApiDTO>>(`${this.base}/project-info/${encodeURIComponent(projectName)}`)
+      .pipe(map(r => r.data));
+  }
+
+  /** POST /api/project-info */
+  createProjectInfo(dto: ProjectInfoApiDTO): Observable<ProjectInfoApiDTO> {
+    return this.http
+      .post<ApiResponse<ProjectInfoApiDTO>>(`${this.base}/project-info`, dto)
+      .pipe(map(r => r.data));
+  }
+
+  /** PUT /api/project-info/{projectName} */
+  updateProjectInfo(projectName: string, dto: ProjectInfoApiDTO): Observable<ProjectInfoApiDTO> {
+    return this.http
+      .put<ApiResponse<ProjectInfoApiDTO>>(`${this.base}/project-info/${encodeURIComponent(projectName)}`, dto)
+      .pipe(map(r => r.data));
+  }
+
+  /** DELETE /api/project-info/{projectName} */
+  deleteProjectInfo(projectName: string): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(`${this.base}/project-info/${encodeURIComponent(projectName)}`)
+      .pipe(map(() => void 0));
+  }
+
+  // ─── Invoice Milestones ───────────────────────────────────────────────────
+
+  /** GET /api/invoice-milestones/{projectName} */
+  getMilestones(projectName: string): Observable<InvoiceMilestoneApiDTO[]> {
+    return this.http
+      .get<ApiResponse<InvoiceMilestoneApiDTO[]>>(`${this.base}/invoice-milestones/${encodeURIComponent(projectName)}`)
+      .pipe(map(r => r.data ?? []));
+  }
+
+  /** POST /api/invoice-milestones */
+  createMilestone(dto: InvoiceMilestoneApiDTO): Observable<InvoiceMilestoneApiDTO> {
+    return this.http
+      .post<ApiResponse<InvoiceMilestoneApiDTO>>(`${this.base}/invoice-milestones`, dto)
+      .pipe(map(r => r.data));
+  }
+
+  /** PUT /api/invoice-milestones/{id} */
+  updateMilestone(id: number, dto: InvoiceMilestoneApiDTO): Observable<InvoiceMilestoneApiDTO> {
+    return this.http
+      .put<ApiResponse<InvoiceMilestoneApiDTO>>(`${this.base}/invoice-milestones/${id}`, dto)
+      .pipe(map(r => r.data));
+  }
+
+  /** DELETE /api/invoice-milestones/{id} */
+  deleteMilestone(id: number): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(`${this.base}/invoice-milestones/${id}`)
+      .pipe(map(() => void 0));
+  }
+
+  // ─── Project Phases ───────────────────────────────────────────────────────
+
+  /** GET /api/project-phases/{projectName} */
+  getPhases(projectName: string): Observable<ProjectPhaseApiDTO[]> {
+    return this.http
+      .get<ApiResponse<ProjectPhaseApiDTO[]>>(`${this.base}/project-phases/${encodeURIComponent(projectName)}`)
+      .pipe(map(r => r.data ?? []));
+  }
+
+  /** POST /api/project-phases */
+  createPhase(dto: ProjectPhaseApiDTO): Observable<ProjectPhaseApiDTO> {
+    return this.http
+      .post<ApiResponse<ProjectPhaseApiDTO>>(`${this.base}/project-phases`, dto)
+      .pipe(map(r => r.data));
+  }
+
+  /** PUT /api/project-phases/{id} */
+  updatePhase(id: number, dto: ProjectPhaseApiDTO): Observable<ProjectPhaseApiDTO> {
+    return this.http
+      .put<ApiResponse<ProjectPhaseApiDTO>>(`${this.base}/project-phases/${id}`, dto)
+      .pipe(map(r => r.data));
+  }
+
+  /** DELETE /api/project-phases/{id} */
+  deletePhase(id: number): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(`${this.base}/project-phases/${id}`)
       .pipe(map(() => void 0));
   }
 }

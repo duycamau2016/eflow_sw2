@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef } from '@angular/core';
 import { Employee } from '../../models/employee.model';
-import { EFlowApiService, ProjectApiDTO } from '../../services/eflow-api.service';
+import { EFlowApiService, ProjectApiDTO, ProjectInfoApiDTO, InvoiceMilestoneApiDTO, ProjectPhaseApiDTO } from '../../services/eflow-api.service';
 import { ExcelImportService } from '../../services/excel-import.service';
 
 export interface ProjectInfo {
@@ -72,6 +72,55 @@ export class ProjectManagementComponent implements OnChanges {
   isSaving   = false;
   isDeleting = false;
   formErrors: Record<string, string> = {};
+
+  // ── Tab điều hướng (Thành viên / Tài chính / Tiến độ) ────────────────────
+  detailTab: 'members' | 'finance' | 'progress' = 'members';
+
+  // ── Thông tin tài chính dự án ─────────────────────────────────────────────
+  projectInfo: ProjectInfoApiDTO | null = null;
+  isLoadingFinance = false;
+  isEditingInfo    = false;
+  infoForm: Partial<ProjectInfoApiDTO> = {};
+  isSavingInfo  = false;
+  infoFormErrors: Record<string, string> = {};
+
+  // ── Mốc hóa đơn ──────────────────────────────────────────────────────────
+  milestones: InvoiceMilestoneApiDTO[] = [];
+  milestoneFormVisible  = false;
+  editingMilestoneId: number | null = null;
+  milestoneForm: Partial<InvoiceMilestoneApiDTO> = {};
+  isSavingMilestone  = false;
+  deletingMilestoneId: number | null = null;
+
+  // ── Giai đoạn / Tiến độ ──────────────────────────────────────────────────
+  phases: ProjectPhaseApiDTO[] = [];
+  isLoadingPhases   = false;
+  phaseFormVisible  = false;
+  editingPhaseId: number | null = null;
+  phaseForm: Partial<ProjectPhaseApiDTO> = {};
+  isSavingPhase  = false;
+  deletingPhaseId: number | null = null;
+
+  readonly milestoneStatusOptions = [
+    { value: 'pending',  label: 'Chờ xuất' },
+    { value: 'invoiced', label: 'Đã xuất HĐ' },
+    { value: 'paid',     label: 'Đã thanh toán' }
+  ];
+
+  readonly phaseStatusOptions = [
+    { value: 'on_track',  label: 'Đúng kế hoạch' },
+    { value: 'at_risk',   label: 'Có rủi ro' },
+    { value: 'delayed',   label: 'Trễ tiến độ' },
+    { value: 'completed', label: 'Hoàn thành' }
+  ];
+
+  readonly milestoneStatusLabel: Record<string, string> = {
+    pending: 'Chờ xuất', invoiced: 'Đã xuất HĐ', paid: 'Đã thanh toán'
+  };
+
+  readonly phaseStatusLabel: Record<string, string> = {
+    on_track: 'Đúng kế hoạch', at_risk: 'Có rủi ro', delayed: 'Trễ tiến độ', completed: 'Hoàn thành'
+  };
 
   readonly statusOptions = [
     { val: 'active',    label: 'Đang thực hiện' },
@@ -304,6 +353,13 @@ export class ProjectManagementComponent implements OnChanges {
     this.deleteProjectConfirm = false;
     this.deleteMemberConfirm  = null;
     this.expandedNodes        = new Set();
+    // Reset tab + finance data
+    this.detailTab          = 'members';
+    this.projectInfo        = null;
+    this.milestones         = [];
+    this.phases             = [];
+    this.milestoneFormVisible = false;
+    this.phaseFormVisible     = false;
     if (proj) {
       this.projectTree = this.buildMemberTree(proj.members);
       this.expandAllNodes(this.projectTree);
@@ -311,6 +367,245 @@ export class ProjectManagementComponent implements OnChanges {
     } else {
       this.projectTree = [];
     }
+  }
+
+  switchTab(tab: 'members' | 'finance' | 'progress'): void {
+    this.detailTab = tab;
+    const name = this.selectedProject?.name;
+    if (!name) return;
+    if (tab === 'finance' && !this.projectInfo && !this.isLoadingFinance) {
+      this.loadFinanceData(name);
+    }
+    if (tab === 'progress' && !this.phases.length && !this.isLoadingPhases) {
+      this.loadPhases(name);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  TAI CHINH - PROJECT INFO
+  // ══════════════════════════════════════════════════════════════════════════
+
+  private loadFinanceData(projectName: string): void {
+    this.isLoadingFinance = true;
+    this.eflowApi.getProjectInfo(projectName).subscribe({
+      next: (data) => { this.projectInfo = data; this.isLoadingFinance = false; },
+      error: (err) => {
+        // 404 = chưa tạo info → không phải lỗi
+        this.projectInfo = null;
+        this.isLoadingFinance = false;
+        // Load milestones dù info có hay không
+        this.eflowApi.getMilestones(projectName).subscribe({
+          next: (list) => { this.milestones = list; },
+          error: () => { this.milestones = []; }
+        });
+      }
+    });
+    this.eflowApi.getMilestones(projectName).subscribe({
+      next: (list) => { this.milestones = list; },
+      error: () => { this.milestones = []; }
+    });
+  }
+
+  openEditInfo(): void {
+    const name = this.selectedProject?.name ?? '';
+    this.infoForm = this.projectInfo
+      ? { ...this.projectInfo }
+      : { projectName: name, contractValue: undefined, plannedCost: undefined, actualCost: undefined };
+    this.infoFormErrors = {};
+    this.isEditingInfo  = true;
+  }
+
+  cancelEditInfo(): void { this.isEditingInfo = false; }
+
+  saveInfo(): void {
+    this.infoFormErrors = {};
+    const name = this.selectedProject?.name;
+    if (!name) return;
+    if (!this.infoForm.projectName?.trim()) {
+      this.infoFormErrors['projectName'] = 'Tên dự án không được để trống';
+      return;
+    }
+    this.isSavingInfo = true;
+    const dto: ProjectInfoApiDTO = {
+      ...(this.projectInfo ?? {}),
+      ...this.infoForm,
+      projectName: name
+    } as ProjectInfoApiDTO;
+
+    const op$ = this.projectInfo
+      ? this.eflowApi.updateProjectInfo(name, dto)
+      : this.eflowApi.createProjectInfo(dto);
+
+    op$.subscribe({
+      next: (saved) => {
+        this.projectInfo  = saved;
+        this.isSavingInfo = false;
+        this.isEditingInfo = false;
+      },
+      error: (err: any) => {
+        this.isSavingInfo = false;
+        this.infoFormErrors['general'] = err?.error?.message ?? 'Lỗi khi lưu';
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  MILESTONES
+  // ══════════════════════════════════════════════════════════════════════════
+
+  openAddMilestone(): void {
+    this.editingMilestoneId  = null;
+    this.milestoneForm = {
+      projectName: this.selectedProject?.name ?? '',
+      name: '', status: 'pending', sortOrder: this.milestones.length
+    };
+    this.milestoneFormVisible = true;
+  }
+
+  openEditMilestone(m: InvoiceMilestoneApiDTO): void {
+    this.editingMilestoneId = m.id ?? null;
+    this.milestoneForm = { ...m };
+    this.milestoneFormVisible = true;
+  }
+
+  cancelMilestoneForm(): void { this.milestoneFormVisible = false; }
+
+  saveMilestone(): void {
+    if (!this.milestoneForm.name?.trim()) return;
+    this.isSavingMilestone = true;
+    const dto = this.milestoneForm as InvoiceMilestoneApiDTO;
+    const op$ = this.editingMilestoneId
+      ? this.eflowApi.updateMilestone(this.editingMilestoneId, dto)
+      : this.eflowApi.createMilestone(dto);
+    op$.subscribe({
+      next: () => {
+        this.isSavingMilestone    = false;
+        this.milestoneFormVisible = false;
+        const name = this.selectedProject?.name;
+        if (name) this.eflowApi.getMilestones(name).subscribe({ next: (l) => { this.milestones = l; this.loadFinanceData(name); } });
+      },
+      error: (err: any) => {
+        this.isSavingMilestone = false;
+        console.error('[eFlow] saveMilestone', err);
+      }
+    });
+  }
+
+  confirmDeleteMilestone(id: number): void { this.deletingMilestoneId = id; }
+  cancelDeleteMilestone(): void { this.deletingMilestoneId = null; }
+
+  doDeleteMilestone(id: number): void {
+    this.eflowApi.deleteMilestone(id).subscribe({
+      next: () => {
+        this.deletingMilestoneId = null;
+        const name = this.selectedProject?.name;
+        if (name) this.eflowApi.getMilestones(name).subscribe({ next: (l) => { this.milestones = l; this.loadFinanceData(name); } });
+      },
+      error: () => { this.deletingMilestoneId = null; }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  PHASES
+  // ══════════════════════════════════════════════════════════════════════════
+
+  private loadPhases(projectName: string): void {
+    this.isLoadingPhases = true;
+    this.eflowApi.getPhases(projectName).subscribe({
+      next: (list) => { this.phases = list; this.isLoadingPhases = false; },
+      error: () => { this.phases = []; this.isLoadingPhases = false; }
+    });
+  }
+
+  openAddPhase(): void {
+    this.editingPhaseId = null;
+    this.phaseForm = {
+      projectName: this.selectedProject?.name ?? '',
+      name: '', progress: 0, status: 'on_track', sortOrder: this.phases.length
+    };
+    this.phaseFormVisible = true;
+  }
+
+  openEditPhase(p: ProjectPhaseApiDTO): void {
+    this.editingPhaseId = p.id ?? null;
+    this.phaseForm = { ...p };
+    this.phaseFormVisible = true;
+  }
+
+  cancelPhaseForm(): void { this.phaseFormVisible = false; }
+
+  savePhase(): void {
+    if (!this.phaseForm.name?.trim()) return;
+    this.isSavingPhase = true;
+    const dto = this.phaseForm as ProjectPhaseApiDTO;
+    const op$ = this.editingPhaseId
+      ? this.eflowApi.updatePhase(this.editingPhaseId, dto)
+      : this.eflowApi.createPhase(dto);
+    op$.subscribe({
+      next: () => {
+        this.isSavingPhase    = false;
+        this.phaseFormVisible = false;
+        const name = this.selectedProject?.name;
+        if (name) this.eflowApi.getPhases(name).subscribe({ next: (l) => { this.phases = l; } });
+      },
+      error: (err: any) => { this.isSavingPhase = false; console.error('[eFlow] savePhase', err); }
+    });
+  }
+
+  confirmDeletePhase(id: number): void { this.deletingPhaseId = id; }
+  cancelDeletePhase(): void { this.deletingPhaseId = null; }
+
+  doDeletePhase(id: number): void {
+    this.eflowApi.deletePhase(id).subscribe({
+      next: () => {
+        this.deletingPhaseId = null;
+        const name = this.selectedProject?.name;
+        if (name) this.eflowApi.getPhases(name).subscribe({ next: (l) => { this.phases = l; } });
+      },
+      error: () => { this.deletingPhaseId = null; }
+    });
+  }
+
+  formatVnd(value?: number): string {
+    if (value == null) return '—';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  }
+
+  /** Hiển thị số tiền dạng 1.000.000.000 trong ô input */
+  toVndStr(v: number | undefined | null): string {
+    if (v == null) return '';
+    return Math.round(v).toLocaleString('de-DE');
+  }
+
+  /** Xử lý sự kiện input tiền: chỉ cho nhập số, tự động format dấu chấm ngăn cách */
+  onVndInput(event: Event, obj: Record<string, any>, key: string): void {
+    const input = event.target as HTMLInputElement;
+    const selStart = input.selectionStart ?? 0;
+    const dotsBefore = (input.value.slice(0, selStart).match(/\./g) ?? []).length;
+
+    const digits = input.value.replace(/[^\d]/g, '');
+    const num = digits ? parseInt(digits, 10) : undefined;
+    obj[key] = num;
+
+    const formatted = num != null ? Math.round(num).toLocaleString('de-DE') : '';
+    input.value = formatted;
+
+    const dotsAfter = (formatted.slice(0, selStart).match(/\./g) ?? []).length;
+    const newPos = Math.max(0, selStart + (dotsAfter - dotsBefore));
+    input.setSelectionRange(newPos, newPos);
+  }
+
+  getPhaseStatusClass(status: string): string {
+    return `phase-${status.replace('_', '-')}`;
+  }
+
+  getMilestoneStatusClass(status: string): string {
+    return `ms-${status}`;
+  }
+
+  overallProgress(): number {
+    if (!this.phases.length) return 0;
+    return Math.round(this.phases.reduce((s, p) => s + p.progress, 0) / this.phases.length);
   }
 
   private expandAllNodes(members: ProjectMember[]): void {

@@ -1366,7 +1366,7 @@
     .required { color: #ef4444; margin-left: 2px; }
   }
 
-  input, select {
+  input, select, textarea {
     padding: 9px 12px;
     border: 1.5px solid #e0e0e0;
     border-radius: 8px;
@@ -1383,7 +1383,8 @@
   }
 
   &.has-error input,
-  &.has-error select {
+  &.has-error select,
+  &.has-error textarea {
     border-color: #ef4444;
   }
 }
@@ -1529,7 +1530,7 @@
 
   .pm-form-field {
     label { color: #94a3b8; }
-    input, select {
+    input, select, textarea {
       background: #0f172a;
       border-color: #334155;
       color: #f1f5f9;
@@ -1553,4 +1554,412 @@
   .pm-form-readonly { background: #0f172a; color: #94a3b8; }
   .pm-general-error { background: #450a0a; }
   .pm-form-footer { background: #0f172a; border-top-color: #334155; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Detail Tabs (Thành viên / Tài chính / Tiến độ)
+// ═══════════════════════════════════════════════════════════
+.pm-detail-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  border-bottom: 2px solid #e0e0e0;
+  flex-shrink: 0;
+  background: #fff;
+
+  .pm-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+    border-radius: 4px 4px 0 0;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+    &:hover { color: #3f51b5; background: #f0f4ff; }
+    &.active { color: #3f51b5; border-bottom-color: #3f51b5; background: none; font-weight: 600; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Finance Tab (Tài chính)
+// ═══════════════════════════════════════════════════════════
+mat-icon.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.pf-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 16px 16px 0;
+
+  .pf-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .pfc-label {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pfc-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e293b;
+
+      &.primary { color: #3f51b5; }
+      &.success  { color: #059669; }
+      &.positive { color: #059669; }
+      &.negative { color: #dc2626; }
+    }
+  }
+}
+
+.pf-section {
+  margin: 16px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+
+  .pf-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      flex: 1;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+
+      mat-icon { font-size: 18px; width: 18px; height: 18px; color: #3f51b5; }
+    }
+
+    .pf-progress-overall {
+      font-size: 13px;
+      color: #64748b;
+    }
+  }
+
+  .pf-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 8px 0;
+
+    .pfi-row {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 16px;
+      gap: 2px;
+      border-bottom: 1px solid #f8fafc;
+
+      &.full { grid-column: 1 / -1; }
+
+      .pfi-label { font-size: 11px; color: #94a3b8; font-weight: 500; }
+      .pfi-value { font-size: 13px; color: #1e293b; }
+    }
+  }
+
+  .pf-empty-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 16px;
+    color: #94a3b8;
+    font-size: 13px;
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  }
+
+  .pf-info-form {
+    padding: 16px;
+  }
+
+  .pf-form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+
+  .pf-milestone-form,
+  .pf-phase-form {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+  }
+
+}
+
+// Milestone table
+.pf-ms-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    padding: 8px 12px;
+    text-align: left;
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr.overdue td { background: #fff7f0; }
+  tr.confirming td { opacity: 0.4; }
+
+  .pf-overdue-badge { color: #dc2626; font-weight: 600; }
+  .overdue-icon { font-size: 14px; width: 14px; height: 14px; color: #f59e0b; vertical-align: middle; }
+}
+
+.pf-ms-badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+
+  &.ms-pending  { background: #fef3c7; color: #92400e; }
+  &.ms-invoiced { background: #dbeafe; color: #1e40af; }
+  &.ms-paid     { background: #d1fae5; color: #065f46; }
+}
+
+// Phase cards
+.pf-phase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.pf-phase-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  border-left: 4px solid #94a3b8;
+
+  &.phase-on-track  { border-left-color: #059669; }
+  &.phase-at-risk   { border-left-color: #f59e0b; }
+  &.phase-delayed   { border-left-color: #dc2626; }
+  &.phase-completed { border-left-color: #3f51b5; background: #f8faff; }
+
+  .ppc-top-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    .ppc-phase-name { flex: 1; font-weight: 600; font-size: 13px; color: #1e293b; }
+    .ppc-actions    { display: flex; gap: 4px; }
+  }
+
+  .pf-phase-badge {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+
+    &.phase-on-track  { background: #d1fae5; color: #065f46; }
+    &.phase-at-risk   { background: #fef3c7; color: #92400e; }
+    &.phase-delayed   { background: #fee2e2; color: #991b1b; }
+    &.phase-completed { background: #dbeafe; color: #1e40af; }
+  }
+
+  .pf-phase-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+
+    .pf-phase-progress-bar {
+      flex: 1;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+
+      .pf-phase-progress-fill {
+        height: 100%;
+        background: #3f51b5;
+        border-radius: 4px;
+        transition: width 0.3s;
+      }
+    }
+
+    .pf-phase-progress-label { font-size: 12px; font-weight: 600; color: #3f51b5; min-width: 36px; }
+  }
+
+  .pf-phase-dates {
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    color: #64748b;
+
+    span { display: flex; align-items: center; gap: 4px; }
+    mat-icon { font-size: 13px; width: 13px; height: 13px; }
+  }
+
+  .pf-phase-note {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-style: italic;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Dark theme: Tài chính / Tiến độ tabs
+// ═══════════════════════════════════════════════════════════
+:host-context(.dark-theme) {
+
+  .pm-detail-tabs {
+    background: #1e293b;
+    border-bottom-color: #334155;
+
+    .pm-tab-btn {
+      color: #64748b;
+      &:hover { color: #818cf8; background: #1e1b4b; }
+      &.active { color: #818cf8; border-bottom-color: #818cf8; }
+    }
+  }
+
+  .pf-summary-cards {
+    .pf-card {
+      background: #1e293b;
+      border-color: #334155;
+
+      .pfc-label { color: #64748b; }
+      .pfc-value { color: #e2e8f0; }
+      .pfc-value.primary { color: #818cf8; }
+      .pfc-value.success,
+      .pfc-value.positive { color: #4ade80; }
+      .pfc-value.negative { color: #f87171; }
+    }
+  }
+
+  .pf-section {
+    background: #1e293b;
+    border-color: #334155;
+
+    .pf-section-header {
+      background: #0f172a;
+      border-bottom-color: #334155;
+      h3 { color: #e2e8f0; mat-icon { color: #818cf8; } }
+      .pf-progress-overall { color: #64748b; }
+    }
+
+    .pf-info-grid {
+      .pfi-row {
+        border-bottom-color: #1e293b;
+        .pfi-label { color: #64748b; }
+        .pfi-value { color: #e2e8f0; }
+      }
+    }
+
+    .pf-empty-hint { color: #475569; mat-icon { color: #475569; } }
+
+    .pf-info-form,
+    .pf-milestone-form,
+    .pf-phase-form {
+      background: #0f172a;
+      border-bottom-color: #334155;
+
+      textarea {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f1f5f9;
+        &:focus { border-color: #818cf8; }
+        &::placeholder { color: #475569; }
+      }
+    }
+  }
+
+  .pf-ms-table {
+    th {
+      background: #0f172a;
+      color: #64748b;
+      border-bottom-color: #334155;
+    }
+    td { border-bottom-color: #1e293b; color: #e2e8f0; }
+    tr.overdue td { background: #451a03; }
+    tr:hover td { background: #1e1b4b; }
+    .pf-overdue-badge { color: #f87171; }
+  }
+
+  .pf-ms-badge {
+    &.ms-pending  { background: #451a03; color: #fb923c; }
+    &.ms-invoiced { background: #1e3a5f; color: #60a5fa; }
+    &.ms-paid     { background: #14532d; color: #4ade80; }
+  }
+
+  .pf-phase-card {
+    background: #1e293b;
+    border-color: #334155;
+    border-left-color: #334155;
+
+    &.phase-on-track  { border-left-color: #4ade80; }
+    &.phase-at-risk   { border-left-color: #fb923c; }
+    &.phase-delayed   { border-left-color: #f87171; }
+    &.phase-completed { border-left-color: #818cf8; background: #1e1b4b; }
+
+    .ppc-phase-name { color: #e2e8f0; }
+
+    .pf-phase-badge {
+      &.phase-on-track  { background: #14532d; color: #4ade80; }
+      &.phase-at-risk   { background: #451a03; color: #fb923c; }
+      &.phase-delayed   { background: #450a0a; color: #f87171; }
+      &.phase-completed { background: #1e3a5f; color: #818cf8; }
+    }
+
+    .pf-phase-progress-wrap {
+      .pf-phase-progress-bar { background: #334155; }
+      .pf-phase-progress-fill { background: #818cf8; }
+      .pf-phase-progress-label { color: #818cf8; }
+    }
+
+    .pf-phase-dates { color: #475569; }
+    .pf-phase-note  { color: #64748b; }
+  }
 }

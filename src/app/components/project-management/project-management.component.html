@@ -127,6 +127,24 @@
       </div>
     </div>
 
+    <!-- Tab navigation -->
+    <div class="pm-detail-tabs">
+      <button class="pm-tab-btn" [class.active]="detailTab === 'members'" (click)="switchTab('members')">
+        <mat-icon>people</mat-icon> Thành viên
+      </button>
+      <ng-container *ngIf="isAdmin">
+        <button class="pm-tab-btn" [class.active]="detailTab === 'finance'" (click)="switchTab('finance')">
+          <mat-icon>account_balance_wallet</mat-icon> Tài chính
+        </button>
+        <button class="pm-tab-btn" [class.active]="detailTab === 'progress'" (click)="switchTab('progress')">
+          <mat-icon>timeline</mat-icon> Tiến độ
+        </button>
+      </ng-container>
+    </div>
+
+    <!-- ── TAB: THÀNH VIÊN ── -->
+    <ng-container *ngIf="detailTab === 'members'">
+
     <!-- Member search + zoom controls -->
     <div class="pm-member-search">
       <mat-icon>person_search</mat-icon>
@@ -288,6 +306,352 @@
         </button>
       </div>
     </div>
+
+    </ng-container><!-- /tab: members -->
+
+    <!-- ── TAB: TÀI CHÍNH ── -->
+    <ng-container *ngIf="detailTab === 'finance'">
+      <div class="pm-tree-empty" *ngIf="isLoadingFinance">
+        <mat-icon class="spin">hourglass_empty</mat-icon>
+        <p>Đang tải dữ liệu tài chính...</p>
+      </div>
+
+      <ng-container *ngIf="!isLoadingFinance">
+
+        <!-- Summary Cards -->
+        <div class="pf-summary-cards" *ngIf="projectInfo">
+          <div class="pf-card">
+            <div class="pfc-label">Giá trị Hợp đồng</div>
+            <div class="pfc-value primary">{{ formatVnd(projectInfo.contractValue) }}</div>
+          </div>
+          <div class="pf-card">
+            <div class="pfc-label">Chi phí Kế hoạch</div>
+            <div class="pfc-value">{{ formatVnd(projectInfo.plannedCost) }}</div>
+          </div>
+          <div class="pf-card">
+            <div class="pfc-label">Chi phí Thực tế</div>
+            <div class="pfc-value">{{ formatVnd(projectInfo.actualCost) }}</div>
+          </div>
+          <div class="pf-card">
+            <div class="pfc-label">Profit Margin</div>
+            <div class="pfc-value" [class.positive]="(projectInfo.profitMargin ?? 0) >= 0" [class.negative]="(projectInfo.profitMargin ?? 0) < 0">
+              {{ projectInfo.profitMargin != null ? (projectInfo.profitMargin | number:'1.1-1') + '%' : '—' }}
+            </div>
+          </div>
+          <div class="pf-card">
+            <div class="pfc-label">Đã xuất HĐ</div>
+            <div class="pfc-value">{{ formatVnd(projectInfo.totalInvoiced) }}</div>
+          </div>
+          <div class="pf-card">
+            <div class="pfc-label">Đã thanh toán</div>
+            <div class="pfc-value success">{{ formatVnd(projectInfo.totalPaid) }}</div>
+          </div>
+        </div>
+
+        <!-- Contract Info -->
+        <div class="pf-section">
+          <div class="pf-section-header">
+            <h3><mat-icon>description</mat-icon> Thông tin Hợp đồng</h3>
+            <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="openEditInfo()" *ngIf="!isEditingInfo">
+              <mat-icon>{{ projectInfo ? 'edit' : 'add' }}</mat-icon>
+              {{ projectInfo ? 'Chỉnh sửa' : 'Nhập thông tin' }}
+            </button>
+          </div>
+
+          <!-- View mode -->
+          <div class="pf-info-grid" *ngIf="!isEditingInfo && projectInfo">
+            <div class="pfi-row"><span class="pfi-label">Khách hàng</span><span class="pfi-value">{{ projectInfo.customer || '—' }}</span></div>
+            <div class="pfi-row"><span class="pfi-label">Số Hợp đồng</span><span class="pfi-value">{{ projectInfo.contractNumber || '—' }}</span></div>
+            <div class="pfi-row"><span class="pfi-label">Ngày bắt đầu</span><span class="pfi-value">{{ projectInfo.startDate || '—' }}</span></div>
+            <div class="pfi-row"><span class="pfi-label">Ngày kết thúc</span><span class="pfi-value">{{ projectInfo.endDate || '—' }}</span></div>
+            <div class="pfi-row full"><span class="pfi-label">Mô tả</span><span class="pfi-value">{{ projectInfo.description || '—' }}</span></div>
+          </div>
+          <div class="pf-empty-hint" *ngIf="!isEditingInfo && !projectInfo">
+            <mat-icon>info_outline</mat-icon>
+            <span>Chưa có thông tin tài chính. Nhấn "Nhập thông tin" để bắt đầu.</span>
+          </div>
+
+          <!-- Edit form -->
+          <div class="pf-info-form" *ngIf="isEditingInfo">
+            <div class="pm-form-row">
+              <div class="pm-form-field">
+                <label>Khách hàng</label>
+                <input type="text" [(ngModel)]="infoForm.customer" placeholder="Tên khách hàng..." />
+              </div>
+              <div class="pm-form-field">
+                <label>Số Hợp đồng</label>
+                <input type="text" [(ngModel)]="infoForm.contractNumber" placeholder="VD: HD-2026-001" />
+              </div>
+            </div>
+            <div class="pm-form-row">
+              <div class="pm-form-field">
+                <label>Ngày bắt đầu</label>
+                <input type="date" [(ngModel)]="infoForm.startDate" />
+              </div>
+              <div class="pm-form-field">
+                <label>Ngày kết thúc</label>
+                <input type="date" [(ngModel)]="infoForm.endDate" />
+              </div>
+            </div>
+            <div class="pm-form-row">
+              <div class="pm-form-field">
+                <label>Giá trị HĐ (VNĐ)</label>
+                <input type="text" inputmode="numeric"
+                  [value]="toVndStr(infoForm.contractValue)"
+                  (input)="onVndInput($event, infoForm, 'contractValue')"
+                  placeholder="0" />
+              </div>
+              <div class="pm-form-field">
+                <label>Chi phí KH (VNĐ)</label>
+                <input type="text" inputmode="numeric"
+                  [value]="toVndStr(infoForm.plannedCost)"
+                  (input)="onVndInput($event, infoForm, 'plannedCost')"
+                  placeholder="0" />
+              </div>
+              <div class="pm-form-field">
+                <label>Chi phí TT (VNĐ)</label>
+                <input type="text" inputmode="numeric"
+                  [value]="toVndStr(infoForm.actualCost)"
+                  (input)="onVndInput($event, infoForm, 'actualCost')"
+                  placeholder="0" />
+              </div>
+            </div>
+            <div class="pm-form-field">
+              <label>Mô tả / Ghi chú</label>
+              <textarea [(ngModel)]="infoForm.description" rows="2" placeholder="Mô tả hợp đồng..."></textarea>
+            </div>
+            <div class="pf-form-actions">
+              <button class="pm-btn pm-btn-ghost" (click)="cancelEditInfo()">Huỷ</button>
+              <button class="pm-btn pm-btn-primary" [disabled]="isSavingInfo" (click)="saveInfo()">
+                <mat-icon *ngIf="isSavingInfo">hourglass_empty</mat-icon>
+                {{ isSavingInfo ? 'Đang lưu...' : 'Lưu' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoice Milestones -->
+        <div class="pf-section">
+          <div class="pf-section-header">
+            <h3><mat-icon>receipt_long</mat-icon> Mốc Xuất Hóa đơn</h3>
+            <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddMilestone()" *ngIf="!milestoneFormVisible">
+              <mat-icon>add</mat-icon> Thêm mốc
+            </button>
+          </div>
+
+          <!-- Add/Edit milestone form -->
+          <div class="pf-milestone-form" *ngIf="milestoneFormVisible">
+            <div class="pm-form-row">
+              <div class="pm-form-field">
+                <label>Tên mốc <span class="required">*</span></label>
+                <input type="text" [(ngModel)]="milestoneForm.name" placeholder="VD: Kickoff, UAT, Go-live..." />
+              </div>
+              <div class="pm-form-field">
+                <label>Số tiền (VNĐ)</label>
+                <input type="text" inputmode="numeric"
+                  [value]="toVndStr(milestoneForm.amount)"
+                  (input)="onVndInput($event, milestoneForm, 'amount')"
+                  placeholder="0" />
+              </div>
+            </div>
+            <div class="pm-form-row">
+              <div class="pm-form-field">
+                <label>Ngày kế hoạch</label>
+                <input type="date" [(ngModel)]="milestoneForm.plannedDate" />
+              </div>
+              <div class="pm-form-field">
+                <label>Ngày thực tế</label>
+                <input type="date" [(ngModel)]="milestoneForm.actualDate" />
+              </div>
+              <div class="pm-form-field">
+                <label>Trạng thái</label>
+                <app-searchable-select
+                  [options]="milestoneStatusOptions"
+                  [(value)]="milestoneForm.status"
+                  placeholder="-- Chọn --">
+                </app-searchable-select>
+              </div>
+            </div>
+            <div class="pm-form-field">
+              <label>Ghi chú</label>
+              <input type="text" [(ngModel)]="milestoneForm.note" placeholder="Ghi chú..." />
+            </div>
+            <div class="pf-form-actions">
+              <button class="pm-btn pm-btn-ghost" (click)="cancelMilestoneForm()">Huỷ</button>
+              <button class="pm-btn pm-btn-primary" [disabled]="isSavingMilestone" (click)="saveMilestone()">
+                <mat-icon *ngIf="isSavingMilestone">hourglass_empty</mat-icon>
+                {{ isSavingMilestone ? 'Đang lưu...' : 'Lưu' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Milestones table -->
+          <div class="pm-tree-empty" *ngIf="milestones.length === 0 && !milestoneFormVisible">
+            <mat-icon>receipt</mat-icon>
+            <p>Chưa có mốc hóa đơn nào</p>
+          </div>
+          <table class="pf-ms-table" *ngIf="milestones.length > 0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Tên mốc</th>
+                <th>Số tiền</th>
+                <th>Ngày KH</th>
+                <th>Ngày TT</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let m of milestones; let i = index">
+                <tr *ngIf="deletingMilestoneId === m.id" class="pm-table-confirm-row">
+                  <td colspan="7">
+                    <div class="pm-inline-confirm">
+                      <mat-icon>warning</mat-icon>
+                      <span>Xoá mốc <strong>{{ m.name }}</strong>?</span>
+                      <button class="pm-btn pm-btn-danger pm-btn-sm" (click)="doDeleteMilestone(m.id!)">Xoá</button>
+                      <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="cancelDeleteMilestone()">Huỷ</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr [class.overdue]="m.overdue" [class.confirming]="deletingMilestoneId === m.id">
+                  <td>{{ i + 1 }}</td>
+                  <td><span [class.pf-overdue-badge]="m.overdue">{{ m.name }}</span><mat-icon *ngIf="m.overdue" class="overdue-icon" title="Quá hạn">warning</mat-icon></td>
+                  <td>{{ formatVnd(m.amount) }}</td>
+                  <td>{{ m.plannedDate || '—' }}</td>
+                  <td>{{ m.actualDate || '—' }}</td>
+                  <td><span class="pf-ms-badge" [class]="getMilestoneStatusClass(m.status)">{{ milestoneStatusLabel[m.status] }}</span></td>
+                  <td>
+                    <button class="pm-tbl-action-btn" title="Sửa" (click)="openEditMilestone(m)"><mat-icon>edit</mat-icon></button>
+                    <button class="pm-tbl-action-btn danger" title="Xoá" (click)="confirmDeleteMilestone(m.id!)"><mat-icon>delete</mat-icon></button>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+        </div>
+
+      </ng-container><!-- /!isLoadingFinance -->
+    </ng-container><!-- /tab: finance -->
+
+    <!-- ── TAB: TIẾN ĐỘ ── -->
+    <ng-container *ngIf="detailTab === 'progress'">
+      <div class="pm-tree-empty" *ngIf="isLoadingPhases">
+        <mat-icon class="spin">hourglass_empty</mat-icon>
+        <p>Đang tải tiến độ...</p>
+      </div>
+
+      <ng-container *ngIf="!isLoadingPhases">
+        <div class="pf-section">
+          <div class="pf-section-header">
+            <h3><mat-icon>timeline</mat-icon> Giai đoạn Dự án</h3>
+            <div class="pf-progress-overall" *ngIf="phases.length > 0">
+              Tổng tiến độ: <strong>{{ overallProgress() }}%</strong>
+            </div>
+            <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddPhase()" *ngIf="!phaseFormVisible">
+              <mat-icon>add</mat-icon> Thêm giai đoạn
+            </button>
+          </div>
+
+          <!-- Add/Edit phase form -->
+          <div class="pf-phase-form" *ngIf="phaseFormVisible">
+            <div class="pm-form-row">
+              <div class="pm-form-field">
+                <label>Tên giai đoạn <span class="required">*</span></label>
+                <input type="text" [(ngModel)]="phaseForm.name" placeholder="VD: Phân tích, Dev, Testing..." />
+              </div>
+              <div class="pm-form-field">
+                <label>Trạng thái</label>
+                <app-searchable-select
+                  [options]="phaseStatusOptions"
+                  [(value)]="phaseForm.status"
+                  placeholder="-- Chọn --">
+                </app-searchable-select>
+              </div>
+            </div>
+            <div class="pm-form-row">
+              <div class="pm-form-field">
+                <label>Ngày bắt đầu KH</label>
+                <input type="date" [(ngModel)]="phaseForm.plannedStart" />
+              </div>
+              <div class="pm-form-field">
+                <label>Ngày kết thúc KH</label>
+                <input type="date" [(ngModel)]="phaseForm.plannedEnd" />
+              </div>
+              <div class="pm-form-field">
+                <label>Ngày bắt đầu TT</label>
+                <input type="date" [(ngModel)]="phaseForm.actualStart" />
+              </div>
+              <div class="pm-form-field">
+                <label>Ngày kết thúc TT</label>
+                <input type="date" [(ngModel)]="phaseForm.actualEnd" />
+              </div>
+            </div>
+            <div class="pm-form-row">
+              <div class="pm-form-field">
+                <label>% Hoàn thành ({{ phaseForm.progress }}%)</label>
+                <input type="range" [(ngModel)]="phaseForm.progress" min="0" max="100" step="5" />
+              </div>
+              <div class="pm-form-field">
+                <label>Ghi chú</label>
+                <input type="text" [(ngModel)]="phaseForm.note" placeholder="Ghi chú..." />
+              </div>
+            </div>
+            <div class="pf-form-actions">
+              <button class="pm-btn pm-btn-ghost" (click)="cancelPhaseForm()">Huỷ</button>
+              <button class="pm-btn pm-btn-primary" [disabled]="isSavingPhase" (click)="savePhase()">
+                <mat-icon *ngIf="isSavingPhase">hourglass_empty</mat-icon>
+                {{ isSavingPhase ? 'Đang lưu...' : 'Lưu' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Phases empty -->
+          <div class="pm-tree-empty" *ngIf="phases.length === 0 && !phaseFormVisible">
+            <mat-icon>timeline</mat-icon>
+            <p>Chưa có giai đoạn nào</p>
+          </div>
+
+          <!-- Phases list -->
+          <div class="pf-phase-list">
+            <div class="pf-phase-card" *ngFor="let p of phases" [class]="getPhaseStatusClass(p.status)">
+              <div class="ppc-top-row">
+                <span class="ppc-phase-name">{{ p.name }}</span>
+                <span class="pf-phase-badge" [class]="getPhaseStatusClass(p.status)">{{ phaseStatusLabel[p.status] }}</span>
+                <div class="ppc-actions" *ngIf="isAdmin">
+                  <button class="pm-node-action-btn" title="Sửa" (click)="openEditPhase(p)"><mat-icon>edit</mat-icon></button>
+                  <button class="pm-node-action-btn danger" title="Xoá" (click)="confirmDeletePhase(p.id!)"><mat-icon>delete</mat-icon></button>
+                </div>
+              </div>
+
+              <!-- Delete confirm inline -->
+              <div class="pm-inline-confirm" *ngIf="deletingPhaseId === p.id">
+                <mat-icon>warning</mat-icon>
+                <span>Xoá giai đoạn <strong>{{ p.name }}</strong>?</span>
+                <button class="pm-btn pm-btn-danger pm-btn-sm" (click)="doDeletePhase(p.id!)">Xoá</button>
+                <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="cancelDeletePhase()">Huỷ</button>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="pf-phase-progress-wrap">
+                <div class="pf-phase-progress-bar">
+                  <div class="pf-phase-progress-fill" [style.width.%]="p.progress"></div>
+                </div>
+                <span class="pf-phase-progress-label">{{ p.progress }}%</span>
+              </div>
+
+              <!-- Dates -->
+              <div class="pf-phase-dates">
+                <span><mat-icon>event</mat-icon> KH: {{ p.plannedStart || '—' }} → {{ p.plannedEnd || '—' }}</span>
+                <span><mat-icon>check_circle</mat-icon> TT: {{ p.actualStart || '—' }} → {{ p.actualEnd || '—' }}</span>
+              </div>
+
+              <div class="pf-phase-note" *ngIf="p.note">{{ p.note }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container><!-- /!isLoadingPhases -->
+    </ng-container><!-- /tab: progress -->
 
     </ng-container><!-- /selectedProject && panelMode==='closed' -->
 
