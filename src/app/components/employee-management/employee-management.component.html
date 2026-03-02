@@ -7,7 +7,7 @@
     <div class="em-header">
       <div class="em-header-top">
         <h2><mat-icon>manage_accounts</mat-icon> Quản lý Nhân sự</h2>
-        <button mat-flat-button color="primary" class="em-add-btn" (click)="openCreate()">
+        <button mat-flat-button color="primary" class="em-add-btn" (click)="openCreate()" *ngIf="isAdmin">
           <mat-icon>person_add</mat-icon> Thêm nhân viên
         </button>
       </div>
@@ -108,23 +108,25 @@
               <span *ngIf="!emp.projects?.length" class="em-no-proj">—</span>
             </td>
             <td class="col-actions" (click)="$event.stopPropagation()">
-              <ng-container *ngIf="deleteConfirmId !== emp.id; else confirmTpl">
-                <button mat-icon-button class="em-action-btn edit" title="Chỉnh sửa" (click)="openEdit(emp, $event)">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button class="em-action-btn delete" title="Xóa" (click)="confirmDelete(emp.id, $event)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+              <ng-container *ngIf="isAdmin">
+                <ng-container *ngIf="deleteConfirmId !== emp.id; else confirmTpl">
+                  <button mat-icon-button class="em-action-btn edit" title="Chỉnh sửa" (click)="openEdit(emp, $event)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button class="em-action-btn delete" title="Xóa" (click)="confirmDelete(emp.id, $event)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </ng-container>
+                <ng-template #confirmTpl>
+                  <span class="em-confirm-del">Xóa?</span>
+                  <button mat-icon-button class="em-action-btn confirm" title="Xác nhận xóa" (click)="doDelete(emp.id)">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button mat-icon-button class="em-action-btn cancel" title="Hủy" (click)="cancelDelete()">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </ng-template>
               </ng-container>
-              <ng-template #confirmTpl>
-                <span class="em-confirm-del">Xóa?</span>
-                <button mat-icon-button class="em-action-btn confirm" title="Xác nhận xóa" (click)="doDelete(emp.id)">
-                  <mat-icon>check</mat-icon>
-                </button>
-                <button mat-icon-button class="em-action-btn cancel" title="Hủy" (click)="cancelDelete()">
-                  <mat-icon>close</mat-icon>
-                </button>
-              </ng-template>
             </td>
           </tr>
         </tbody>

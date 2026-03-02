@@ -18,7 +18,9 @@ body.dark-theme {
   color: #f1f5f9;
 
   // Material dialog overlay dark
-  .mat-dialog-container {
+  .mat-dialog-container,
+  .mat-mdc-dialog-container,
+  .mat-mdc-dialog-surface {
     background: #1e293b !important;
     color: #f1f5f9 !important;
   }

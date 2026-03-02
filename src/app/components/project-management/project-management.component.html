@@ -8,7 +8,7 @@
       </div>
       <div class="psh-actions-row">
         <span class="proj-count">{{ projects.length }} dự án</span>
-        <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openCreateProject($event)">
+        <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openCreateProject($event)" *ngIf="isAdmin">
           <mat-icon>add</mat-icon> Tạo dự án
         </button>
       </div>
@@ -58,7 +58,7 @@
           <mat-icon>people</mat-icon>
           <span>{{ proj.memberCount }} thành viên</span>
         </div>
-        <div class="ppc-actions">
+        <div class="ppc-actions" *ngIf="isAdmin">
           <button class="ppc-action-btn" title="Sửa tên dự án" (click)="openEditProject(proj, $event)">
             <mat-icon>edit</mat-icon>
           </button>
@@ -115,7 +115,7 @@
         </div>
       </div>
       <div class="pdh-actions">
-        <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddMember()">
+        <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddMember()" *ngIf="isAdmin">
           <mat-icon>person_add</mat-icon> Thêm thành viên
         </button>
         <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="openEditProject(selectedProject)">
@@ -252,12 +252,14 @@
                 </span>
               </td>
               <td class="col-actions">
-                <button class="pm-tbl-action-btn" title="Sửa" (click)="openEditMember(m)">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button class="pm-tbl-action-btn danger" title="Xoá" (click)="confirmDeleteMember(m.assignmentId)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                <ng-container *ngIf="isAdmin">
+                  <button class="pm-tbl-action-btn" title="Sửa" (click)="openEditMember(m)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button class="pm-tbl-action-btn danger" title="Xoá" (click)="confirmDeleteMember(m.assignmentId)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </ng-container>
               </td>
             </tr>
           </ng-container>
@@ -388,11 +390,11 @@
   <ng-template #noSelection>
     <div class="pm-main pm-no-selection">
       <mat-icon>folder_open</mat-icon>
-      <p>Chọn một dự án để xem chi tiết hoặc<br/>
+      <p>Chọn một dự án để xem chi tiết<span *ngIf="isAdmin"><br/>âu  hoặc<br/>
         <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openCreateProject()">
           <mat-icon>add</mat-icon> Tạo dự án mới
         </button>
-      </p>
+      </span></p>
     </div>
   </ng-template>
 
@@ -426,7 +428,7 @@
       </div>
 
       <!-- Node actions -->
-      <div class="pm-node-actions">
+      <div class="pm-node-actions" *ngIf="isAdmin">
         <button class="pm-node-action-btn" title="Sửa" (click)="openEditMember(member, $event)">
           <mat-icon>edit</mat-icon>
         </button>

@@ -1,0 +1,56 @@
+<div class="login-dialog" [class.dark-theme]="isDarkTheme">
+  <div class="login-header">
+    <div class="login-icon-wrap">
+      <mat-icon>admin_panel_settings</mat-icon>
+    </div>
+    <h2>Đăng nhập</h2>
+    <p>Chỉ tài khoản ADMIN mới có quyền chỉnh sửa dữ liệu</p>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="login-form">
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Tên đăng nhập</mat-label>
+      <mat-icon matPrefix>person_outline</mat-icon>
+      <input
+        matInput
+        [(ngModel)]="username"
+        name="username"
+        autocomplete="username"
+        [disabled]="isLoading"
+        required
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Mật khẩu</mat-label>
+      <mat-icon matPrefix>lock_outline</mat-icon>
+      <input
+        matInput
+        [type]="hidePassword ? 'password' : 'text'"
+        [(ngModel)]="password"
+        name="password"
+        autocomplete="current-password"
+        [disabled]="isLoading"
+        required
+      />
+      <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" [tabIndex]="-1">
+        <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <div class="error-msg" *ngIf="errorMsg">
+      <mat-icon>error_outline</mat-icon>
+      {{ errorMsg }}
+    </div>
+
+    <div class="login-actions">
+      <button mat-button type="button" (click)="onCancel()" [disabled]="isLoading" class="cancel-btn">Huỷ</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="isLoading" class="submit-btn">
+        <mat-spinner diameter="16" *ngIf="isLoading"></mat-spinner>
+        <mat-icon *ngIf="!isLoading">login</mat-icon>
+        <span>{{ isLoading ? 'Đang xác thực...' : 'Đăng nhập' }}</span>
+      </button>
+    </div>
+  </form>
+</div>

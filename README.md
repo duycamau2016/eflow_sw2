@@ -65,6 +65,15 @@ Truy cập: **http://localhost:4200**
 - Import file `.xlsx` / `.xls`
 - Tự động sync dữ liệu lên Spring Boot API
 - Hỗ trợ tải file Excel mẫu (55 nhân viên, 6 dự án)
+- ⚠️ Chỉ tài khoản **Admin** mới có quyền import dữ liệu
+
+### 🔐 Xác thực & Phân quyền
+- Đăng nhập qua dialog (không reload trang)
+- Phiên đăng nhập lưu trong `sessionStorage` (tự động xoá khi đóng tab)
+- Hai cấp quyền:
+  - **Admin** — toàn quyền: import Excel, thêm/sửa/xoá nhân viên & dự án
+  - **Khách** — chỉ xem: sơ đồ tổ chức, danh sách nhân sự, danh sách dự án
+- Giao diện tự ẩn các nút chỉnh sửa khi chưa đăng nhập
 
 ---
 
@@ -110,13 +119,15 @@ src/
     │   └── employee.model.ts       # Interfaces: Employee, Project, OrgNode, ImportResult
     ├── services/
     │   ├── eflow-api.service.ts    # HTTP client → Spring Boot REST API
-    │   └── excel-import.service.ts # Parse Excel, build org-tree, sync to API
+    │   ├── excel-import.service.ts # Parse Excel, build org-tree, sync to API
+    │   └── auth.service.ts         # Xác thực, quản lý phiên đăng nhập (sessionStorage)
     └── components/
-        ├── excel-import/           # Upload & import file Excel
+        ├── excel-import/           # Upload & import file Excel (Admin only)
         ├── org-chart/              # Sơ đồ tổ chức (container + recursive node)
         ├── employee-detail/        # Dialog chi tiết nhân viên
         ├── employee-management/    # CRUD nhân sự (bảng + form)
-        └── project-management/     # CRUD dự án (sidebar list + tree/table view + form panel)
+        ├── project-management/     # CRUD dự án (sidebar list + tree/table view + form panel)
+        └── login/                  # Dialog đăng nhập (hỗ trợ dark/light theme)
 ```
 
 ---
@@ -151,3 +162,4 @@ export const environment = {
 | HTTP Client | Angular HttpClient |
 | Excel Parse | SheetJS (xlsx) |
 | Build tool | Angular CLI / Webpack |
+| Auth | Stateless session (sessionStorage + Spring Boot endpoint) |

@@ -32,6 +32,7 @@ import { OrgNodeComponent } from './components/org-chart/org-node.component';
 import { EmployeeDetailComponent } from './components/employee-detail/employee-detail.component';
 import { ProjectManagementComponent } from './components/project-management/project-management.component';
 import { EmployeeManagementComponent } from './components/employee-management/employee-management.component';
+import { LoginComponent } from './components/login/login.component';
 
 @NgModule({
   declarations: [
@@ -41,7 +42,8 @@ import { EmployeeManagementComponent } from './components/employee-management/em
     OrgNodeComponent,
     EmployeeDetailComponent,
     ProjectManagementComponent,
-    EmployeeManagementComponent
+    EmployeeManagementComponent,
+    LoginComponent
   ],
   imports: [
     BrowserModule,
@@ -71,6 +73,6 @@ import { EmployeeManagementComponent } from './components/employee-management/em
   ],
   providers: [],
   bootstrap: [AppComponent],
-  entryComponents: [EmployeeDetailComponent]
+  entryComponents: [EmployeeDetailComponent, LoginComponent]
 })
 export class AppModule {}

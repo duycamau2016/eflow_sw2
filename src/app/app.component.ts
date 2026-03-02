@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { Employee, ImportResult, OrgNode } from './models/employee.model';
 import { ExcelImportService } from './services/excel-import.service';
+import { AuthService } from './services/auth.service';
+import { LoginComponent } from './components/login/login.component';
 
 type ActiveMenu = 'orgchart' | 'projects' | 'employees' | 'import' | 'none';
 
@@ -24,7 +27,7 @@ export class AppComponent {
 
   stats = { total: 0, departments: 0, projects: 0, levels: 0 };
 
-  constructor(private excelService: ExcelImportService) {
+  constructor(private excelService: ExcelImportService, private dialog: MatDialog, public authService: AuthService) {
     // Áp dụng dark theme mặc định ngay lập tức
     document.body.classList.add('dark-theme');
 
@@ -35,6 +38,23 @@ export class AppComponent {
     this.excelService.orgTree$.subscribe(tree => {
       this.orgTree = tree;
     });
+  }
+
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+
+  openLogin(): void {
+    this.dialog.open(LoginComponent, {
+      width: '380px',
+      disableClose: false,
+      panelClass: this.isDarkTheme ? ['login-dialog-panel', 'dark-theme'] : ['login-dialog-panel'],
+      data: { isDarkTheme: this.isDarkTheme }
+    });
+  }
+
+  logout(): void {
+    this.authService.logout();
   }
 
   onImportDone(result: ImportResult): void {

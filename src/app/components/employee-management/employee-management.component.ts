@@ -11,6 +11,7 @@ export type PanelMode = 'closed' | 'view' | 'edit' | 'create';
 })
 export class EmployeeManagementComponent implements OnChanges {
   @Input() allEmployees: Employee[] = [];
+  @Input() isAdmin = false;
 
   // ─── List state ─────────────────────────────────────────────
   searchQuery  = '';

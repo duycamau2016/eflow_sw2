@@ -32,6 +32,7 @@ type PanelMode = 'closed' | 'create-project' | 'edit-project' | 'add-member' | '
 })
 export class ProjectManagementComponent implements OnChanges {
   @Input() allEmployees: Employee[] = [];
+  @Input() isAdmin = false;
   @ViewChild('treeWrapper') treeWrapperRef!: ElementRef<HTMLElement>;
 
   // ── Dữ liệu hiển thị ─────────────────────────────────────────────────────
