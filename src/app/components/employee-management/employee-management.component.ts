@@ -23,8 +23,8 @@ export class EmployeeManagementComponent implements OnChanges {
   // ─── Panel state ─────────────────────────────────────────────
   panelMode: PanelMode = 'closed';
   selectedEmployee: Employee | null = null;
-  deleteConfirmId: string | null = null;
-
+  deleteConfirmId: string | null = null;  isSaving    = false;
+  isDeleting: string | null = null;
   // ─── Form ─────────────────────────────────────────────────
   form: Partial<Employee> = {};
   formErrors: Record<string, string> = {};
@@ -220,12 +220,14 @@ export class EmployeeManagementComponent implements OnChanges {
       children:  [],
       avatar:    ''
     };
-    if (this.panelMode === 'create') {
-      this.excelService.addEmployee(emp);
-    } else {
-      this.excelService.updateEmployee(emp);
-    }
-    this.closePanel();
+    this.isSaving = true;
+    const op$ = this.panelMode === 'create'
+      ? this.excelService.addEmployee(emp)
+      : this.excelService.updateEmployee(emp);
+    op$.subscribe({
+      next: () => { this.isSaving = false; this.closePanel(); },
+      error: ()  => { this.isSaving = false; }
+    });
   }
 
   // ─── Project CRUD inside form ────────────────────────────────
@@ -258,9 +260,18 @@ export class EmployeeManagementComponent implements OnChanges {
   cancelDelete(): void { this.deleteConfirmId = null; }
 
   doDelete(id: string): void {
-    this.excelService.deleteEmployee(id);
-    if (this.selectedEmployee?.id === id) this.closePanel();
-    this.deleteConfirmId = null;
-    if (this.page >= this.totalPages) this.page = Math.max(0, this.totalPages - 1);
+    this.isDeleting = id;
+    this.excelService.deleteEmployee(id).subscribe({
+      next: () => {
+        this.isDeleting = null;
+        if (this.selectedEmployee?.id === id) this.closePanel();
+        this.deleteConfirmId = null;
+        if (this.page >= this.totalPages) this.page = Math.max(0, this.totalPages - 1);
+      },
+      error: () => {
+        this.isDeleting = null;
+        this.deleteConfirmId = null;
+      }
+    });
   }
 }

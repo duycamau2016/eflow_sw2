@@ -84,6 +84,23 @@ export class AppComponent {
   async loadSampleData(): Promise<void> {
     if (this.isSampleLoading) return;
     this.isSampleLoading = true;
+
+    // 1. Thử tải từ Spring Boot API trước
+    try {
+      const result = await this.excelService.loadFromApi().toPromise();
+      if (result && result.employees.length > 0) {
+        this.importResult = result;
+        this.hasData = true;
+        this.showImportPanel = false;
+        this.isSampleLoading = false;
+        console.log(`[eFlow] Loaded ${result.total} employees from API`);
+        return;
+      }
+    } catch {
+      // API chưa khởi động hoặc không có dữ liệu → fallback về Excel mẫu
+    }
+
+    // 2. Fallback: tải file Excel mẫu từ assets
     try {
       const result = await this.excelService.loadFromUrl('assets/data/sample-data-55emp-6proj.xlsx');
       this.importResult = result;

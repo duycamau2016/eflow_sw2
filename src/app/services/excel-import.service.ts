@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import * as XLSX from 'xlsx';
 import { Employee, Project, ImportResult, OrgNode } from '../models/employee.model';
+import { EFlowApiService, EmployeeApiDTO, ProjectApiDTO } from './eflow-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +16,10 @@ export class ExcelImportService {
   employees$ = this.employeesSubject.asObservable();
   orgTree$ = this.orgTreeSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private eflowApi: EFlowApiService
+  ) {}
 
   /**
    * Parse file Excel và trả về danh sách nhân viên
@@ -123,6 +128,9 @@ export class ExcelImportService {
           const tree = this.buildOrgTree(employees);
           this.employeesSubject.next(employees);
           this.orgTreeSubject.next(tree);
+
+          // Sync to Spring Boot backend (fire-and-forget)
+          this._syncToApi(employees);
 
           resolve({
             success: true,
@@ -355,6 +363,9 @@ export class ExcelImportService {
     this.employeesSubject.next(employees);
     this.orgTreeSubject.next(tree);
 
+    // Sync to Spring Boot backend (fire-and-forget)
+    this._syncToApi(employees);
+
     return { success: true, employees, errors, total: employees.length };
   }
 
@@ -363,34 +374,183 @@ export class ExcelImportService {
     this.orgTreeSubject.next([]);
   }
 
-  addEmployee(emp: Employee): void {
-    const current = this.employeesSubject.getValue();
-    const updated = [...current, emp];
-    const tree = this.buildOrgTree(updated);
-    this.employeesSubject.next(updated);
-    this.orgTreeSubject.next(tree);
+  addEmployee(emp: Employee): Observable<Employee> {
+    const dto = this.employeeToDTO(emp);
+    return this.eflowApi.createEmployee(dto).pipe(
+      map(saved => {
+        const result = this.dtoToEmployee(saved);
+        const current = [...this.employeesSubject.getValue(), result];
+        const tree = this.buildOrgTree(current);
+        this.employeesSubject.next(current);
+        this.orgTreeSubject.next(tree);
+        return result;
+      }),
+      catchError(err => {
+        console.warn('[eFlow] createEmployee API error, updating local state:', err);
+        const current = [...this.employeesSubject.getValue(), emp];
+        const tree = this.buildOrgTree(current);
+        this.employeesSubject.next(current);
+        this.orgTreeSubject.next(tree);
+        return of(emp);
+      })
+    );
   }
 
-  updateEmployee(emp: Employee): void {
-    const current = this.employeesSubject.getValue();
-    const updated = current.map(e => e.id === emp.id ? { ...emp } : e);
-    const tree = this.buildOrgTree(updated);
-    this.employeesSubject.next(updated);
-    this.orgTreeSubject.next(tree);
+  updateEmployee(emp: Employee): Observable<Employee> {
+    const dto = this.employeeToDTO(emp);
+    return this.eflowApi.updateEmployee(emp.id, dto).pipe(
+      map(saved => {
+        const result = this.dtoToEmployee(saved);
+        const current = this.employeesSubject.getValue().map(e => e.id === result.id ? result : e);
+        const tree = this.buildOrgTree(current);
+        this.employeesSubject.next(current);
+        this.orgTreeSubject.next(tree);
+        return result;
+      }),
+      catchError(err => {
+        console.warn('[eFlow] updateEmployee API error, updating local state:', err);
+        const current = this.employeesSubject.getValue().map(e => e.id === emp.id ? { ...emp } : e);
+        const tree = this.buildOrgTree(current);
+        this.employeesSubject.next(current);
+        this.orgTreeSubject.next(tree);
+        return of(emp);
+      })
+    );
   }
 
-  deleteEmployee(id: string): void {
-    const current = this.employeesSubject.getValue();
-    // Remove employee + clear their managerId from subordinates
-    const updated = current
+  deleteEmployee(id: string): Observable<void> {
+    return this.eflowApi.deleteEmployee(id).pipe(
+      map(() => { this._removeFromLocalState(id); }),
+      catchError(err => {
+        console.warn('[eFlow] deleteEmployee API error, updating local state:', err);
+        this._removeFromLocalState(id);
+        return of(void 0);
+      })
+    );
+  }
+
+  private _removeFromLocalState(id: string): void {
+    const current = this.employeesSubject.getValue()
       .filter(e => e.id !== id)
       .map(e => e.managerId === id ? { ...e, managerId: null } : e);
-    const tree = this.buildOrgTree(updated);
-    this.employeesSubject.next(updated);
+    const tree = this.buildOrgTree(current);
+    this.employeesSubject.next(current);
     this.orgTreeSubject.next(tree);
   }
 
   getEmployees(): Employee[] {
     return this.employeesSubject.getValue();
+  }
+
+  // ─── API Integration ─────────────────────────────────────────────────────
+
+  /**
+   * Tải toàn bộ nhân viên từ Spring Boot API và cập nhật local state.
+   * Dùng khi khởi động app hoặc cần load lại từ server.
+   */
+  loadFromApi(): Observable<ImportResult> {
+    return this.eflowApi.getAllEmployees().pipe(
+      map(dtos => {
+        const employees = dtos.map(dto => this.dtoToEmployee(dto));
+        const tree = this.buildOrgTree(employees);
+        this.employeesSubject.next(employees);
+        this.orgTreeSubject.next(tree);
+        return { success: true, employees, errors: [], total: employees.length } as ImportResult;
+      })
+    );
+  }
+
+  /** Bulk sync toàn bộ danh sách nhân viên lên API (fire-and-forget) */
+  private _syncToApi(employees: Employee[]): void {
+    const dtos = employees.map(e => this.employeeToDTO(e));
+    this.eflowApi.bulkImport(dtos)
+      .pipe(catchError(err => {
+        console.warn('[eFlow] Bulk sync to API failed (offline mode):', err);
+        return of(void 0);
+      }))
+      .subscribe(() => console.log(`[eFlow] Synced ${dtos.length} employees to API`));
+  }
+
+  // ─── Converters ──────────────────────────────────────────────────────────
+
+  /** Angular Employee → API DTO */
+  employeeToDTO(emp: Employee): EmployeeApiDTO {
+    return {
+      id: emp.id,
+      name: emp.name,
+      position: emp.position,
+      department: emp.department,
+      email: emp.email,
+      phone: emp.phone,
+      managerId: emp.managerId,
+      avatar: emp.avatar,
+      level: emp.level,
+      joinDate: this.toISODate(emp.joinDate),
+      projects: (emp.projects ?? []).map(p => this.projectToDTO(p, emp.id)),
+    };
+  }
+
+  /** API DTO → Angular Employee */
+  dtoToEmployee(dto: EmployeeApiDTO): Employee {
+    return {
+      id: dto.id,
+      name: dto.name,
+      position: dto.position,
+      department: dto.department,
+      email: dto.email || '',
+      phone: dto.phone || '',
+      managerId: dto.managerId,
+      joinDate: this.fromISODate(dto.joinDate),
+      level: dto.level ?? 0,
+      avatar: dto.avatar || this.generateAvatar(dto.name),
+      projects: dto.projects ? dto.projects.map(p => this.dtoToProject(p)) : null,
+      children: [],
+      subordinatesCount: dto.subordinatesCount ?? 0,
+    };
+  }
+
+  private projectToDTO(proj: Project, employeeId: string): ProjectApiDTO {
+    return {
+      id: proj.id,
+      employeeId,
+      name: proj.name,
+      role: proj.role,
+      startDate: this.toISODate(proj.startDate),
+      endDate: this.toISODate(proj.endDate),
+      status: proj.status,
+    };
+  }
+
+  private dtoToProject(dto: ProjectApiDTO): Project {
+    return {
+      id: dto.id,
+      name: dto.name,
+      role: dto.role,
+      startDate: this.fromISODate(dto.startDate),
+      endDate: this.fromISODate(dto.endDate),
+      status: dto.status,
+    };
+  }
+
+  /**
+   * Chuyển chuỗi ngày dd/MM/yyyy → ISO yyyy-MM-dd.
+   * Nếu đã là ISO hoặc rỗng thì trả về nguyên bản.
+   */
+  private toISODate(value?: string): string | undefined {
+    if (!value) return undefined;
+    const parts = value.split('/');
+    if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value; // already ISO
+    return undefined;
+  }
+
+  /**
+   * Chuyển ISO yyyy-MM-dd → dd/MM/yyyy cho Angular UI.
+   */
+  private fromISODate(value?: string): string {
+    if (!value) return '';
+    const parts = value.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return value;
   }
 }

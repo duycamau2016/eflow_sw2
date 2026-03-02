@@ -1,16 +1,72 @@
-# eFlow SW2 - Sơ đồ Phân cấp Nhân sự SW2
+# eFlow SW2 — Frontend (Angular)
 
-Ứng dụng Angular hiển thị sơ đồ tổ chức phân cấp nhân sự từ file Excel.
+Ứng dụng **Angular** quản lý sơ đồ tổ chức và dự án nhân sự SW2.  
+Kết nối với [eFlow Service](../../eFlowService) (Spring Boot REST API chạy trên cổng **8099**).
+
+---
 
 ## 🚀 Cài đặt & Chạy
 
+### Yêu cầu
+| Công cụ | Phiên bản tối thiểu |
+|---------|-------------------|
+| Node.js | 18.x trở lên |
+| npm     | 9.x trở lên |
+| Angular CLI | 17.x trở lên |
+
+### Các bước
+
 ```bash
-cd eflow-hr
+# 1. Di chuyển vào thư mục FE
+cd eFlowFE/eflow_sw2
+
+# 2. Cài đặt dependencies
 npm install
+
+# 3. Chạy development server
 npm start
+# hoặc
+ng serve
 ```
 
-Truy cập: http://localhost:4200
+Truy cập: **http://localhost:4200**
+
+> ⚠️ Cần khởi động **eFlow Service** trước (port 8099) để có đầy đủ chức năng CRUD.  
+> Nếu service chưa khởi động, app tự động fallback về file Excel mẫu (`assets/data/`).
+
+---
+
+## ✨ Tính năng
+
+### 📊 Sơ đồ Tổ chức
+- Hiển thị sơ đồ phân cấp nhân sự dạng cây (org-chart)
+- Zoom in/out (Ctrl+Scroll hoặc pinch) và pan (kéo chuột)
+- Thu gọn/mở rộng từng nhánh
+- Click node để xem chi tiết nhân viên
+
+### 👥 Quản lý Nhân sự
+- Danh sách nhân viên toàn công ty (bảng + phân trang)
+- Tìm kiếm theo tên, phòng ban, chức vụ
+- CRUD đầy đủ: Thêm / Sửa / Xoá nhân viên
+- Xem chi tiết: dự án đang tham gia, cấp dưới
+
+### 📁 Quản lý Dự án
+- Xem tất cả dự án dạng danh sách + sơ đồ thành viên
+- Tìm kiếm & lọc theo trạng thái (Đang thực hiện / Chờ / Hoàn thành)
+- CRUD đầy đủ:
+  - **Tạo dự án** mới và thêm thành viên đầu tiên
+  - **Thêm thành viên** vào dự án hiện có
+  - **Sửa** vai trò, ngày, trạng thái của từng assignment
+  - **Đổi tên** dự án (cập nhật toàn bộ assignment)
+  - **Xoá** dự án hoặc từng thành viên khỏi dự án
+- Chế độ xem: Sơ đồ cây (org-chart) hoặc Bảng danh sách
+
+### 📥 Import Excel
+- Import file `.xlsx` / `.xls`
+- Tự động sync dữ liệu lên Spring Boot API
+- Hỗ trợ tải file Excel mẫu (55 nhân viên, 6 dự án)
+
+---
 
 ## 📋 Cấu trúc file Excel
 
@@ -26,7 +82,7 @@ File Excel cần có **2 sheet**:
 | E | Email | Địa chỉ email |
 | F | Số điện thoại | SĐT liên hệ |
 | G | ID quản lý | Mã nhân viên của cấp trên (để trống nếu là gốc) |
-| H | Ngày vào làm | Định dạng dd/mm/yyyy |
+| H | Ngày vào làm | Định dạng `dd/MM/yyyy` |
 
 ### Sheet 2: `Dự án`
 | Cột | Tên trường | Mô tả |
@@ -34,32 +90,64 @@ File Excel cần có **2 sheet**:
 | A | ID nhân viên | Mã nhân viên tham gia |
 | B | Tên dự án | Tên dự án |
 | C | Vai trò | Vai trò trong dự án |
-| D | Ngày bắt đầu | dd/mm/yyyy |
-| E | Ngày kết thúc | dd/mm/yyyy (để trống nếu đang tiếp tục) |
-| F | Trạng thái | active / completed / pending |
+| D | Ngày bắt đầu | `dd/MM/yyyy` |
+| E | Ngày kết thúc | `dd/MM/yyyy` (để trống nếu đang tiếp tục) |
+| F | Trạng thái | `active` / `completed` / `pending` |
 
-## ✨ Tính năng
-
-- ✅ Import file Excel (.xlsx, .xls)
-- ✅ Hiển thị sơ đồ phân cấp dạng cây
-- ✅ Click vào node để xem thông tin chi tiết
-- ✅ Xem dự án và nhân viên cấp dưới
-- ✅ Tìm kiếm nhân viên
-- ✅ Zoom in/out sơ đồ
-- ✅ Thu gọn/mở rộng nhánh
-- ✅ Tải file Excel mẫu
-- ✅ Thống kê tổng quan
+---
 
 ## 🏗️ Kiến trúc
 
 ```
-src/app/
-├── models/
-│   └── employee.model.ts      # Interfaces: Employee, Project, OrgNode
-├── services/
-│   └── excel-import.service.ts # Xử lý parse Excel, build cây phân cấp
-└── components/
-    ├── excel-import/           # UI upload file
-    ├── org-chart/              # Sơ đồ cây (container + node)
-    └── employee-detail/        # Dialog chi tiết nhân viên
+src/
+├── environments/
+│   └── environment.ts              # API base URL (http://localhost:8099/api)
+└── app/
+    ├── app.module.ts               # Module root, import Material, HttpClient
+    ├── app.component.ts/html/scss  # Shell: toolbar, sidenav, router-outlet logic
+    ├── app-routing.module.ts
+    ├── models/
+    │   └── employee.model.ts       # Interfaces: Employee, Project, OrgNode, ImportResult
+    ├── services/
+    │   ├── eflow-api.service.ts    # HTTP client → Spring Boot REST API
+    │   └── excel-import.service.ts # Parse Excel, build org-tree, sync to API
+    └── components/
+        ├── excel-import/           # Upload & import file Excel
+        ├── org-chart/              # Sơ đồ tổ chức (container + recursive node)
+        ├── employee-detail/        # Dialog chi tiết nhân viên
+        ├── employee-management/    # CRUD nhân sự (bảng + form)
+        └── project-management/     # CRUD dự án (sidebar list + tree/table view + form panel)
 ```
+
+---
+
+## 🔗 API kết nối
+
+Base URL được cấu hình trong `src/environments/environment.ts`:
+
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8099/api'
+};
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend (Angular) | http://localhost:4200 |
+| Backend (Spring Boot) | http://localhost:8099 |
+| H2 Console (DB) | http://localhost:8099/h2-console |
+
+---
+
+## 🛠️ Tech Stack
+
+| Thành phần | Công nghệ |
+|-----------|-----------|
+| Framework | Angular 17 |
+| UI Components | Angular Material |
+| Icons | Google Material Icons |
+| Styles | SCSS |
+| HTTP Client | Angular HttpClient |
+| Excel Parse | SheetJS (xlsx) |
+| Build tool | Angular CLI / Webpack |

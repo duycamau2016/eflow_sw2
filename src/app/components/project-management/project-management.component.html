@@ -3,8 +3,15 @@
   <!-- Left panel: project list -->
   <div class="pm-sidebar">
     <div class="pm-sidebar-header">
-      <h2><mat-icon>folder_special</mat-icon> Quản lý Dự án</h2>
-      <span class="proj-count">{{ projects.length }} dự án</span>
+      <div class="psh-title-row">
+        <h2><mat-icon>folder_special</mat-icon> Quản lý Dự án</h2>
+      </div>
+      <div class="psh-actions-row">
+        <span class="proj-count">{{ projects.length }} dự án</span>
+        <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openCreateProject($event)">
+          <mat-icon>add</mat-icon> Tạo dự án
+        </button>
+      </div>
     </div>
 
     <!-- Search + filter -->
@@ -51,6 +58,14 @@
           <mat-icon>people</mat-icon>
           <span>{{ proj.memberCount }} thành viên</span>
         </div>
+        <div class="ppc-actions">
+          <button class="ppc-action-btn" title="Sửa tên dự án" (click)="openEditProject(proj, $event)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button class="ppc-action-btn danger" title="Xóa dự án" (click)="confirmDeleteProject(proj, $event)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
       </div>
 
       <div class="pm-empty-list" *ngIf="filteredProjects.length === 0">
@@ -60,8 +75,23 @@
     </div>
   </div>
 
-  <!-- Right panel: project detail -->
-  <div class="pm-detail" *ngIf="selectedProject; else noSelection">
+  <!-- Right panel: project detail + form panel -->
+  <div class="pm-main" *ngIf="selectedProject || panelMode !== 'closed'; else noSelection">
+
+    <!-- Detail area (hidden when form is open) -->
+    <ng-container *ngIf="selectedProject && panelMode === 'closed'">
+
+    <!-- Delete project confirm banner -->
+    <div class="pm-delete-banner" *ngIf="deleteProjectConfirm">
+      <mat-icon>warning</mat-icon>
+      <span>Xác nhận xoá dự án <strong>{{ selectedProject.name }}</strong>?
+        Thao tác này sẽ xoá tất cả {{ selectedProject.memberCount }} assignment.
+      </span>
+      <button class="pm-btn pm-btn-danger pm-btn-sm" [disabled]="isDeleting" (click)="doDeleteProject()">
+        <mat-icon>delete_forever</mat-icon> {{ isDeleting ? 'Đang xoá...' : 'Xoá' }}
+      </button>
+      <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="deleteProjectConfirm = false">Huỷ</button>
+    </div>
 
     <!-- Detail header -->
     <div class="pm-detail-header">
@@ -83,6 +113,17 @@
           <mat-icon>account_tree</mat-icon>
           <span>{{ projectTree.length }} nhánh gốc</span>
         </div>
+      </div>
+      <div class="pdh-actions">
+        <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddMember()">
+          <mat-icon>person_add</mat-icon> Thêm thành viên
+        </button>
+        <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="openEditProject(selectedProject)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button class="pm-btn pm-btn-danger pm-btn-sm" (click)="confirmDeleteProject()">
+          <mat-icon>delete</mat-icon>
+        </button>
       </div>
     </div>
 
@@ -170,30 +211,56 @@
             <th class="col-start">Ngày bắt đầu</th>
             <th class="col-end">Ngày kết thúc</th>
             <th class="col-status">Trạng thái</th>
+            <th class="col-actions">Thao tác</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let m of pagedMembers; let i = index">
-            <td class="col-idx">{{ tablePage * tablePageSize + i + 1 }}</td>
-            <td class="col-name">
-              <div class="ptbl-name-cell">
-                <div class="ptbl-avatar" [style.background]="getAvatarColor(m.employee.name)">
-                  {{ getInitials(m.employee.name) }}
+          <ng-container *ngFor="let m of pagedMembers; let i = index">
+            <!-- Confirm delete row -->
+            <tr *ngIf="deleteMemberConfirm === m.assignmentId" class="pm-table-confirm-row">
+              <td colspan="9">
+                <div class="pm-inline-confirm">
+                  <mat-icon>warning</mat-icon>
+                  <span>Xoá <strong>{{ m.employee.name }}</strong> khỏi dự án?</span>
+                  <button class="pm-btn pm-btn-danger pm-btn-sm" [disabled]="isDeleting"
+                    (click)="doDeleteMember(m.assignmentId)">
+                    {{ isDeleting ? 'Đang xoá...' : 'Xoá' }}
+                  </button>
+                  <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="cancelDeleteMember()">Huỷ</button>
                 </div>
-                <span>{{ m.employee.name }}</span>
-              </div>
-            </td>
-            <td class="col-position">{{ m.employee.position }}</td>
-            <td class="col-dept">{{ m.employee.department || '—' }}</td>
-            <td class="col-role"><span class="pm-node-role">{{ m.role || 'Thành viên' }}</span></td>
-            <td class="col-start">{{ m.startDate || '—' }}</td>
-            <td class="col-end">{{ m.endDate || '—' }}</td>
-            <td class="col-status">
-              <span class="pm-node-status" [class]="getStatusClass(m.status)">
-                {{ statusLabel[m.status] }}
-              </span>
-            </td>
-          </tr>
+              </td>
+            </tr>
+            <!-- Normal row -->
+            <tr [class.confirming]="deleteMemberConfirm === m.assignmentId">
+              <td class="col-idx">{{ tablePage * tablePageSize + i + 1 }}</td>
+              <td class="col-name">
+                <div class="ptbl-name-cell">
+                  <div class="ptbl-avatar" [style.background]="getAvatarColor(m.employee.name)">
+                    {{ getInitials(m.employee.name) }}
+                  </div>
+                  <span>{{ m.employee.name }}</span>
+                </div>
+              </td>
+              <td class="col-position">{{ m.employee.position }}</td>
+              <td class="col-dept">{{ m.employee.department || '—' }}</td>
+              <td class="col-role"><span class="pm-node-role">{{ m.role || 'Thành viên' }}</span></td>
+              <td class="col-start">{{ m.startDate || '—' }}</td>
+              <td class="col-end">{{ m.endDate || '—' }}</td>
+              <td class="col-status">
+                <span class="pm-node-status" [class]="getStatusClass(m.status)">
+                  {{ statusLabel[m.status] }}
+                </span>
+              </td>
+              <td class="col-actions">
+                <button class="pm-tbl-action-btn" title="Sửa" (click)="openEditMember(m)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="pm-tbl-action-btn danger" title="Xoá" (click)="confirmDeleteMember(m.assignmentId)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </ng-container>
         </tbody>
       </table>
     </div>
@@ -226,13 +293,106 @@
       </div>
     </div>
 
-  </div><!-- /pm-detail -->
+    </ng-container><!-- /selectedProject && panelMode==='closed' -->
+
+    <!-- ══ FORM PANEL ══════════════════════════════════════════════════════ -->
+    <div class="pm-form-panel" *ngIf="panelMode !== 'closed'">
+
+      <div class="pm-form-header">
+        <h3>{{ getPanelTitle() }}</h3>
+        <button class="pm-form-close" (click)="closePanel()"><mat-icon>close</mat-icon></button>
+      </div>
+
+      <div class="pm-form-body">
+
+        <!-- Project Form (create / edit) -->
+        <ng-container *ngIf="panelMode === 'create-project' || panelMode === 'edit-project'">
+          <div class="pm-form-field" [class.has-error]="formErrors['name']">
+            <label>Tên dự án <span class="required">*</span></label>
+            <input type="text" [(ngModel)]="projectForm.name" placeholder="Nhập tên dự án..."
+              (keyup.enter)="saveProject()" autofocus />
+            <span class="pm-field-error" *ngIf="formErrors['name']">{{ formErrors['name'] }}</span>
+          </div>
+        </ng-container>
+
+        <!-- Member Form (add / edit) -->
+        <ng-container *ngIf="panelMode === 'add-member' || panelMode === 'edit-member'">
+
+          <div class="pm-form-field">
+            <label>Dự án</label>
+            <div class="pm-form-readonly">{{ _pendingProjectName || selectedProject?.name }}</div>
+          </div>
+
+          <div class="pm-form-field" *ngIf="panelMode === 'add-member'" [class.has-error]="formErrors['employeeId']">
+            <label>Nhân viên <span class="required">*</span></label>
+            <select [(ngModel)]="memberForm.employeeId">
+              <option value="">-- Chọn nhân viên --</option>
+              <option *ngFor="let e of availableEmployees" [value]="e.id">
+                {{ e.name }} – {{ e.position }}
+              </option>
+            </select>
+            <span class="pm-field-error" *ngIf="formErrors['employeeId']">{{ formErrors['employeeId'] }}</span>
+          </div>
+
+          <div class="pm-form-field" *ngIf="panelMode === 'edit-member'">
+            <label>Nhân viên</label>
+            <div class="pm-form-readonly">{{ editingMemberEmployee?.name }} – {{ editingMemberEmployee?.position }}</div>
+          </div>
+
+          <div class="pm-form-field" [class.has-error]="formErrors['role']">
+            <label>Vai trò <span class="required">*</span></label>
+            <input type="text" [(ngModel)]="memberForm.role" placeholder="Ví dụ: Tech Lead, Developer..." />
+            <span class="pm-field-error" *ngIf="formErrors['role']">{{ formErrors['role'] }}</span>
+          </div>
+
+          <div class="pm-form-row">
+            <div class="pm-form-field">
+              <label>Ngày bắt đầu</label>
+              <input type="date" [(ngModel)]="memberForm.startDate" />
+            </div>
+            <div class="pm-form-field">
+              <label>Ngày kết thúc</label>
+              <input type="date" [(ngModel)]="memberForm.endDate" />
+            </div>
+          </div>
+
+          <div class="pm-form-field">
+            <label>Trạng thái</label>
+            <select [(ngModel)]="memberForm.status">
+              <option *ngFor="let s of statusOptions" [value]="s.val">{{ s.label }}</option>
+            </select>
+          </div>
+
+        </ng-container>
+
+        <div class="pm-field-error pm-general-error" *ngIf="formErrors['general']">
+          <mat-icon>error_outline</mat-icon> {{ formErrors['general'] }}
+        </div>
+
+      </div><!-- /pm-form-body -->
+
+      <div class="pm-form-footer">
+        <button class="pm-btn pm-btn-ghost" (click)="closePanel()">Huỷ</button>
+        <button class="pm-btn pm-btn-primary" [disabled]="isSaving"
+          (click)="(panelMode === 'create-project' || panelMode === 'edit-project') ? saveProject() : saveMember()">
+          <mat-icon *ngIf="isSaving">hourglass_empty</mat-icon>
+          {{ isSaving ? 'Đang lưu...' : (panelMode === 'create-project' ? 'Tiếp theo →' : 'Lưu') }}
+        </button>
+      </div>
+
+    </div><!-- /pm-form-panel -->
+
+  </div><!-- /pm-main -->
 
   <!-- No selection placeholder -->
   <ng-template #noSelection>
-    <div class="pm-no-selection">
+    <div class="pm-main pm-no-selection">
       <mat-icon>folder_open</mat-icon>
-      <p>Chọn một dự án để xem danh sách thành viên</p>
+      <p>Chọn một dự án để xem chi tiết hoặc<br/>
+        <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openCreateProject()">
+          <mat-icon>add</mat-icon> Tạo dự án mới
+        </button>
+      </p>
     </div>
   </ng-template>
 
@@ -263,6 +423,27 @@
         <span class="pm-node-status" [class]="getStatusClass(member.status)">
           {{ statusLabel[member.status] }}
         </span>
+      </div>
+
+      <!-- Node actions -->
+      <div class="pm-node-actions">
+        <button class="pm-node-action-btn" title="Sửa" (click)="openEditMember(member, $event)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button class="pm-node-action-btn danger" title="Xoá" (click)="confirmDeleteMember(member.assignmentId, $event)">
+          <mat-icon>person_remove</mat-icon>
+        </button>
+      </div>
+
+      <!-- Inline delete confirm on node -->
+      <div class="pm-node-confirm" *ngIf="deleteMemberConfirm === member.assignmentId"
+        (click)="$event.stopPropagation()">
+        <span>Xoá thành viên này?</span>
+        <button class="pm-btn pm-btn-danger pm-btn-sm" [disabled]="isDeleting"
+          (click)="doDeleteMember(member.assignmentId)">
+          {{ isDeleting ? '...' : 'Xoá' }}
+        </button>
+        <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="cancelDeleteMember()">Huỷ</button>
       </div>
 
       <!-- Expand button -->

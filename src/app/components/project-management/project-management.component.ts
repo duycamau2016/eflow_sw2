@@ -1,7 +1,10 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
-import { Employee, Project } from '../../models/employee.model';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef } from '@angular/core';
+import { Employee } from '../../models/employee.model';
+import { EFlowApiService, ProjectApiDTO } from '../../services/eflow-api.service';
+import { ExcelImportService } from '../../services/excel-import.service';
 
 export interface ProjectInfo {
+  /** = project name – dùng làm key */
   id: string;
   name: string;
   status: 'active' | 'completed' | 'pending';
@@ -10,6 +13,8 @@ export interface ProjectInfo {
 }
 
 export interface ProjectMember {
+  /** ID của bản ghi Project (assignment) trong DB */
+  assignmentId: string;
   employee: Employee;
   role: string;
   startDate?: string;
@@ -18,6 +23,8 @@ export interface ProjectMember {
   children: ProjectMember[];
 }
 
+type PanelMode = 'closed' | 'create-project' | 'edit-project' | 'add-member' | 'edit-member';
+
 @Component({
   selector: 'app-project-management',
   templateUrl: './project-management.component.html',
@@ -25,22 +32,61 @@ export interface ProjectMember {
 })
 export class ProjectManagementComponent implements OnChanges {
   @Input() allEmployees: Employee[] = [];
-
   @ViewChild('treeWrapper') treeWrapperRef!: ElementRef<HTMLElement>;
 
+  // ── Dữ liệu hiển thị ─────────────────────────────────────────────────────
   projects: ProjectInfo[] = [];
   filteredProjects: ProjectInfo[] = [];
   selectedProject: ProjectInfo | null = null;
   projectTree: ProjectMember[] = [];
-  searchQuery = '';
+
+  // ── Tìm kiếm / lọc ───────────────────────────────────────────────────────
+  searchQuery  = '';
   memberSearch = '';
-  statusFilter: string = 'all';
+  statusFilter = 'all';
+
+  // ── Chế độ xem ───────────────────────────────────────────────────────────
+  viewMode: 'tree' | 'table' = 'tree';
   expandedNodes = new Set<string>();
 
-  viewMode: 'tree' | 'table' = 'tree';
-
+  // ── Phân trang bảng ──────────────────────────────────────────────────────
   tablePage = 0;
   readonly tablePageSize = 10;
+
+  // ── Panel CRUD ────────────────────────────────────────────────────────────
+  panelMode: PanelMode = 'closed';
+  projectForm = { name: '', status: 'active' };
+  memberForm  = { employeeId: '', role: '', startDate: '', endDate: '', status: 'active' };
+  editingAssignmentId: string | null = null;
+  editingMemberEmployee: Employee | null = null;
+  // Used in template – not private
+  _pendingProjectName = '';
+  _autoSelectProjectName: string | null = null;
+
+  // ── Xác nhận xoá ─────────────────────────────────────────────────────────
+  deleteProjectConfirm               = false;
+  deleteMemberConfirm: string | null = null;
+
+  // ── Trạng thái loading ────────────────────────────────────────────────────
+  isSaving   = false;
+  isDeleting = false;
+  formErrors: Record<string, string> = {};
+
+  readonly statusOptions = [
+    { val: 'active',    label: 'Đang thực hiện' },
+    { val: 'pending',   label: 'Chờ triển khai'  },
+    { val: 'completed', label: 'Hoàn thành'       }
+  ];
+
+  constructor(
+    private eflowApi: EFlowApiService,
+    private excelService: ExcelImportService
+  ) {}
+
+  get availableEmployees(): Employee[] {
+    const memberIds = new Set((this.selectedProject?.members ?? []).map(m => m.employee.id));
+    return this.allEmployees.filter(e => !memberIds.has(e.id));
+  }
 
   get totalTablePages(): number {
     return Math.max(1, Math.ceil(this.flatFilteredMembers.length / this.tablePageSize));
@@ -173,42 +219,58 @@ export class ProjectManagementComponent implements OnChanges {
 
     for (const emp of this.allEmployees) {
       for (const proj of (emp.projects ?? [])) {
-        const key = proj.name.trim();
+        const key = proj.name?.trim();
+        if (!key) continue;
+
         if (!map.has(key)) {
-          map.set(key, {
-            id: key,
-            name: key,
-            status: proj.status,
-            memberCount: 0,
-            members: []
-          });
+          map.set(key, { id: key, name: key, status: proj.status as any, memberCount: 0, members: [] });
         }
         const info = map.get(key)!;
         info.memberCount++;
-        // Ưu tiên status active > pending > completed
-        if (proj.status === 'active') info.status = 'active';
-        else if (proj.status === 'pending' && info.status !== 'active') info.status = 'pending';
+
+        const rank: Record<string, number> = { active: 2, pending: 1, completed: 0 };
+        if ((rank[proj.status] ?? 0) > (rank[info.status] ?? 0)) info.status = proj.status as any;
+
         info.members.push({
-          employee: emp,
-          role: proj.role,
-          startDate: proj.startDate,
-          endDate: proj.endDate,
-          status: proj.status,
-          children: []
+          assignmentId: proj.id,
+          employee:     emp,
+          role:         proj.role,
+          startDate:    proj.startDate,
+          endDate:      proj.endDate,
+          status:       proj.status as any,
+          children:     []
         });
       }
     }
 
     this.projects = Array.from(map.values()).sort((a, b) => {
-      const order = { active: 0, pending: 1, completed: 2 };
-      return order[a.status] - order[b.status] || a.name.localeCompare(b.name, 'vi');
+      const ord: Record<string, number> = { active: 0, pending: 1, completed: 2 };
+      return (ord[a.status] ?? 3) - (ord[b.status] ?? 3) || a.name.localeCompare(b.name, 'vi');
     });
 
     this.applyProjectFilter();
 
+    // Auto-select a project after creation
+    if (this._autoSelectProjectName) {
+      const toSelect = this.projects.find(
+        p => p.name.toLowerCase() === this._autoSelectProjectName!.toLowerCase()
+      );
+      this._autoSelectProjectName = null;
+      if (toSelect) {
+        this.selectProject(toSelect);
+        return;
+      }
+    }
+
     if (this.selectedProject) {
       const updated = this.projects.find(p => p.id === this.selectedProject!.id);
-      this.selectProject(updated ?? null);
+      if (updated) {
+        this.selectedProject = updated;
+        this.projectTree = this.buildMemberTree(updated.members);
+      } else {
+        this.selectedProject = null;
+        this.projectTree = [];
+      }
     }
   }
 
@@ -222,14 +284,16 @@ export class ProjectManagementComponent implements OnChanges {
   }
 
   selectProject(proj: ProjectInfo | null): void {
-    this.selectedProject = proj;
-    this.memberSearch = '';
-    this.tablePage = 0;
-    this.expandedNodes.clear();
-    this.viewMode = 'tree';
+    this.selectedProject      = proj;
+    this.memberSearch         = '';
+    this.tablePage            = 0;
+    this.viewMode             = 'tree';
+    this.panelMode            = 'closed';
+    this.deleteProjectConfirm = false;
+    this.deleteMemberConfirm  = null;
+    this.expandedNodes        = new Set();
     if (proj) {
       this.projectTree = this.buildMemberTree(proj.members);
-      // Expand all nodes by default
       this.expandAllNodes(this.projectTree);
       setTimeout(() => { this.zoomLevel = 0.7; this.scrollToCenter(); }, 300);
     } else {
@@ -334,5 +398,212 @@ export class ProjectManagementComponent implements OnChanges {
 
   getInitials(name: string): string {
     return name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase();
+  }
+
+  getPanelTitle(): string {
+    switch (this.panelMode) {
+      case 'create-project': return 'Tạo dự án mới';
+      case 'edit-project':   return 'Đổi tên dự án';
+      case 'add-member':     return this._pendingProjectName
+        ? `Thêm thành viên vào "${this._pendingProjectName}"`
+        : `Thêm thành viên vào "${this.selectedProject?.name}"`;
+      case 'edit-member':    return 'Sửa thông tin thành viên';
+      default: return '';
+    }
+  }
+
+  private toInputDate(value?: string): string {
+    if (!value) return '';
+    const p = value.split('/');
+    return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : value;
+  }
+
+  formatDisplayDate(value?: string): string {
+    if (!value) return '—';
+    const p = value.split('-');
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : value;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  CRUD - DỰ ÁN
+  // ══════════════════════════════════════════════════════════════════════════
+
+  openCreateProject(event?: Event): void {
+    event?.stopPropagation();
+    this.projectForm = { name: '', status: 'active' };
+    this.formErrors  = {};
+    this.deleteProjectConfirm = false;
+    this.deleteMemberConfirm  = null;
+    this.panelMode = 'create-project';
+  }
+
+  openEditProject(proj: ProjectInfo, event?: Event): void {
+    event?.stopPropagation();
+    this.selectProject(proj);
+    this.projectForm = { name: proj.name, status: proj.status };
+    this.formErrors  = {};
+    this.panelMode = 'edit-project';
+  }
+
+  saveProject(): void {
+    this.formErrors = {};
+    const name = this.projectForm.name.trim();
+    if (!name) { this.formErrors['name'] = 'Tên dự án không được để trống'; return; }
+
+    if (this.panelMode === 'create-project') {
+      if (this.projects.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        this.formErrors['name'] = 'Tên dự án đã tồn tại';
+        return;
+      }
+      this._pendingProjectName = name;
+      this.memberForm = { employeeId: '', role: '', startDate: '', endDate: '', status: 'active' };
+      this.editingAssignmentId    = null;
+      this.editingMemberEmployee  = null;
+      this.panelMode = 'add-member';
+      return;
+    }
+
+    if (!this.selectedProject) return;
+    const oldName = this.selectedProject.name;
+    if (name === oldName) { this.closePanel(); return; }
+
+    this.isSaving = true;
+    this.eflowApi.renameProject(oldName, name).subscribe({
+      next: () => { this.isSaving = false; this.closePanel(); this.refreshData(); },
+      error: (err: any) => {
+        this.isSaving = false;
+        this.formErrors['name'] = err?.error?.message ?? 'Lỗi khi đổi tên dự án';
+      }
+    });
+  }
+
+  confirmDeleteProject(proj?: ProjectInfo, event?: Event): void {
+    event?.stopPropagation();
+    if (proj) this.selectProject(proj);
+    this.deleteProjectConfirm = true;
+    this.panelMode = 'closed';
+  }
+
+  doDeleteProject(): void {
+    if (!this.selectedProject || this.isDeleting) return;
+    this.isDeleting = true;
+    this.eflowApi.deleteProjectByName(this.selectedProject.name).subscribe({
+      next: () => {
+        this.isDeleting = false;
+        this.deleteProjectConfirm = false;
+        this.selectProject(null);
+        this.refreshData();
+      },
+      error: (err: any) => { this.isDeleting = false; console.error('[eFlow] Delete project', err); }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  CRUD - THÀNH VIÊN
+  // ══════════════════════════════════════════════════════════════════════════
+
+  openAddMember(event?: Event): void {
+    event?.stopPropagation();
+    this._pendingProjectName   = this.selectedProject?.name ?? '';
+    this.editingAssignmentId   = null;
+    this.editingMemberEmployee = null;
+    this.memberForm = { employeeId: '', role: '', startDate: '', endDate: '', status: 'active' };
+    this.formErrors = {};
+    this.panelMode  = 'add-member';
+  }
+
+  openEditMember(member: ProjectMember, event?: Event): void {
+    event?.stopPropagation();
+    this.editingAssignmentId   = member.assignmentId;
+    this.editingMemberEmployee = member.employee;
+    this._pendingProjectName   = this.selectedProject?.name ?? '';
+    this.memberForm = {
+      employeeId: member.employee.id,
+      role:       member.role ?? '',
+      startDate:  this.toInputDate(member.startDate),
+      endDate:    this.toInputDate(member.endDate),
+      status:     member.status
+    };
+    this.formErrors = {};
+    this.panelMode  = 'edit-member';
+  }
+
+  saveMember(): void {
+    this.formErrors = {};
+    if (this.panelMode === 'add-member' && !this.memberForm.employeeId) {
+      this.formErrors['employeeId'] = 'Vui lòng chọn nhân viên'; return;
+    }
+    if (!this.memberForm.role.trim()) {
+      this.formErrors['role'] = 'Vai trò không được để trống'; return;
+    }
+    const projectName = this._pendingProjectName || this.selectedProject?.name;
+    if (!projectName) { this.formErrors['general'] = 'Không xác định được dự án'; return; }
+
+    const dto: ProjectApiDTO = {
+      id:         this.editingAssignmentId ?? '',
+      employeeId: this.memberForm.employeeId,
+      name:       projectName,
+      role:       this.memberForm.role.trim(),
+      startDate:  this.memberForm.startDate || undefined,
+      endDate:    this.memberForm.endDate   || undefined,
+      status:     this.memberForm.status as any
+    };
+
+    // If adding first member to a brand-new project, remember name for auto-select
+    const autoSelect = (this.panelMode === 'add-member' && !this.selectedProject)
+      ? this._pendingProjectName : null;
+
+    this.isSaving = true;
+    const op$ = this.panelMode === 'add-member'
+      ? this.eflowApi.createProject(dto)
+      : this.eflowApi.updateProject(this.editingAssignmentId!, dto);
+
+    op$.subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.closePanel();
+        if (autoSelect) this._autoSelectProjectName = autoSelect;
+        this.refreshData();
+      },
+      error: (err: any) => {
+        this.isSaving = false;
+        this.formErrors['general'] = err?.error?.message ?? 'Lỗi khi lưu thành viên';
+      }
+    });
+  }
+
+  confirmDeleteMember(assignmentId: string, event?: Event): void {
+    event?.stopPropagation();
+    this.deleteMemberConfirm = assignmentId;
+  }
+
+  doDeleteMember(assignmentId: string): void {
+    if (this.isDeleting) return;
+    this.isDeleting = true;
+    this.eflowApi.deleteProject(assignmentId).subscribe({
+      next: () => { this.isDeleting = false; this.deleteMemberConfirm = null; this.refreshData(); },
+      error: () => { this.isDeleting = false; this.deleteMemberConfirm = null; }
+    });
+  }
+
+  cancelDeleteMember(): void { this.deleteMemberConfirm = null; }
+
+  closePanel(): void {
+    this.panelMode             = 'closed';
+    this.formErrors            = {};
+    this.editingAssignmentId   = null;
+    this.editingMemberEmployee = null;
+    this._pendingProjectName   = '';
+  }
+
+  private refreshData(): void {
+    this.excelService.loadFromApi().subscribe({
+      next: (result) => {
+        // Cập nhật trực tiếp không chờ @Input từ AppComponent
+        this.allEmployees = result.employees;
+        this.buildProjects();
+      },
+      error: (err: any) => console.warn('[eFlow] Refresh failed:', err)
+    });
   }
 }
