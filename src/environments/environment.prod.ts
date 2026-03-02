@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://eflow-service.vercel.app/api'
+  apiUrl: 'https://eflow-service-production.up.railway.app/api'
 };
