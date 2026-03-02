@@ -93,12 +93,16 @@ export class SearchableSelectComponent implements AfterViewChecked, OnDestroy {
     }
   }
 
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   @HostListener('window:resize')
   onScrollOrResize(): void {
     if (this.isOpen) {
       this.computePanelPosition();
     }
+  }
+
+  trackByValue(_index: number, opt: SelectOption): any {
+    return opt.value;
   }
 
   ngAfterViewChecked(): void {

@@ -35,25 +35,33 @@ export class EmployeeManagementComponent implements OnChanges {
   newProject: Partial<Project> = {};
   showAddProject = false;
 
+  // ─── Cached options (tránh tạo array mới mỗi change detection) ──
+  deptSelectOptions: { value: string; label: string }[] = [
+    { value: 'all', label: 'Tất cả phòng ban' }
+  ];
+
   constructor(private excelService: ExcelImportService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['allEmployees']) {
       this.page = 0;
+      this.rebuildDeptOptions();
     }
+  }
+
+  private rebuildDeptOptions(): void {
+    const s = new Set(this.allEmployees.map(e => e.department).filter(Boolean));
+    const sorted = Array.from(s).sort((a, b) => a.localeCompare(b, 'vi'));
+    this.deptSelectOptions = [
+      { value: 'all', label: 'Tất cả phòng ban' },
+      ...sorted.map(d => ({ value: d, label: d }))
+    ];
   }
 
   // ─── Computed lists ──────────────────────────────────────────
   get departments(): string[] {
     const s = new Set(this.allEmployees.map(e => e.department).filter(Boolean));
     return Array.from(s).sort((a, b) => a.localeCompare(b, 'vi'));
-  }
-
-  get deptSelectOptions() {
-    return [
-      { value: 'all', label: 'Tất cả phòng ban' },
-      ...this.departments.map(d => ({ value: d, label: d }))
-    ];
   }
 
   get managerSelectOptions() {

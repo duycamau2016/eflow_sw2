@@ -29,8 +29,8 @@
           <mat-icon>business</mat-icon>
           <app-searchable-select
             [options]="deptSelectOptions"
-            [(value)]="deptFilter"
-            (valueChange)="page = 0"
+            [value]="deptFilter"
+            (valueChange)="deptFilter = $event; page = 0"
             placeholder="Tất cả phòng ban"
             searchPlaceholder="Tìm phòng ban...">
           </app-searchable-select>

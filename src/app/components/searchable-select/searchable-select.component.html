@@ -27,7 +27,7 @@
       >{{ nullOption }}</div>
       <div
         class="ss-option"
-        *ngFor="let opt of filteredOptions"
+        *ngFor="let opt of filteredOptions; trackBy: trackByValue"
         [class.ss-selected]="opt.value == value"
         (click)="select(opt.value)"
       >{{ opt.label }}</div>
