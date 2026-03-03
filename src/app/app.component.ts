@@ -26,6 +26,30 @@ export class AppComponent {
   isMobileNavOpen = false;
   projectToSelect: string | null = null;
 
+  // ─── Global Search ───────────────────────────────────────────────
+  globalQuery       = '';
+  globalSearchOpen  = false;
+
+  get globalResults(): { employees: Employee[]; projects: string[] } {
+    const q = this.globalQuery.toLowerCase().trim();
+    if (!q || q.length < 1) return { employees: [], projects: [] };
+    const employees = this.allEmployees
+      .filter(e =>
+        e.name?.toLowerCase().includes(q) ||
+        e.id?.toLowerCase().includes(q)   ||
+        e.position?.toLowerCase().includes(q) ||
+        e.department?.toLowerCase().includes(q)
+      ).slice(0, 6);
+    const projSet = new Set<string>();
+    this.allEmployees.forEach(e => (e.projects ?? []).forEach(p => { if (p.name?.toLowerCase().includes(q)) projSet.add(p.name); }));
+    return { employees, projects: Array.from(projSet).slice(0, 5) };
+  }
+
+  get hasGlobalResults(): boolean {
+    const r = this.globalResults;
+    return r.employees.length > 0 || r.projects.length > 0;
+  }
+
   stats = { total: 0, departments: 0, projects: 0, levels: 0 };
 
   constructor(private excelService: ExcelImportService, private dialog: MatDialog, public authService: AuthService) {
@@ -85,6 +109,27 @@ export class AppComponent {
     this.activeMenu = 'projects';
     this.isMobileNavOpen = false;
     if (!this.hasData) this.loadSampleData();
+  }
+
+  onGlobalSelectEmployee(_emp: Employee): void {
+    this.globalQuery      = '';
+    this.globalSearchOpen = false;
+    this.activeMenu       = 'employees';
+    this.isMobileNavOpen  = false;
+    if (!this.hasData) this.loadSampleData();
+    // future: emit selected employee id for auto-open
+  }
+
+  onGlobalSelectProject(projName: string): void {
+    this.globalQuery      = '';
+    this.globalSearchOpen = false;
+    this.onNavigateToProject(projName);
+  }
+
+  onGlobalBlur(): void {
+    // Use timeout so click events on dropdown items fire first
+    setTimeout(() => { this.globalSearchOpen = false; }, 150);
+  }
   }
 
   closeMobileNav(): void {

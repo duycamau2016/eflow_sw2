@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Employee, OrgNode } from '../models/employee.model';
+import { ProjectInfo, ProjectMember } from '../components/project-management/project-management.component';
 import * as XLSX from 'xlsx';
 
 @Injectable({ providedIn: 'root' })
@@ -78,6 +79,49 @@ export class ExportService {
     XLSX.utils.book_append_sheet(wb, hierSheet, 'Phân cấp');
 
     XLSX.writeFile(wb, `${filename}_${this.dateStamp()}.xlsx`);
+  }
+
+  // -------------------------------------------------------
+  // Xuất Excel: danh sách thành viên 1 dự án
+  // -------------------------------------------------------
+  exportProjectMembers(project: ProjectInfo, members: ProjectMember[]): void {
+    const wb = XLSX.utils.book_new();
+
+    const rows: (string | number)[][] = [[
+      'Mã NV', 'Họ và tên', 'Chức vụ', 'Phòng ban',
+      'Vai trò trong dự án', 'Ngày bắt đầu', 'Ngày kết thúc', 'Trạng thái'
+    ]];
+
+    const flatten = (list: ProjectMember[]): ProjectMember[] => {
+      const result: ProjectMember[] = [];
+      list.forEach(m => { result.push(m); if (m.children?.length) result.push(...flatten(m.children)); });
+      return result;
+    };
+
+    flatten(members).forEach(m => {
+      rows.push([
+        m.employee.id ?? '',
+        m.employee.name ?? '',
+        m.employee.position ?? '',
+        m.employee.department ?? '',
+        m.role ?? '',
+        m.startDate ?? '',
+        m.endDate   ?? '',
+        this.translateStatus(m.status)
+      ]);
+    });
+
+    const sheet = XLSX.utils.aoa_to_sheet(rows);
+    sheet['!cols'] = [
+      { wch: 10 }, { wch: 24 }, { wch: 22 }, { wch: 22 },
+      { wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 16 }
+    ];
+    XLSX.utils.book_append_sheet(wb, sheet, 'Thành viên');
+    XLSX.writeFile(wb, `du_an_${this._safeName(project.name)}_${this.dateStamp()}.xlsx`);
+  }
+
+  private _safeName(s: string): string {
+    return s.replace(/[^a-zA-Z0-9\u00C0-\u024F\u1E00-\u1EFF _-]/g, '').replace(/\s+/g, '_');
   }
 
   // -------------------------------------------------------

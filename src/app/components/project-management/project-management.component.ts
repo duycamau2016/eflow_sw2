@@ -2,6 +2,7 @@ import { Component, Input, OnChanges, SimpleChanges, ViewChild, ElementRef } fro
 import { Employee } from '../../models/employee.model';
 import { EFlowApiService, ProjectApiDTO, ProjectInfoApiDTO, InvoiceMilestoneApiDTO, ProjectPhaseApiDTO } from '../../services/eflow-api.service';
 import { ExcelImportService } from '../../services/excel-import.service';
+import { ExportService } from '../../services/export.service';
 
 export interface ProjectInfo {
   /** = project name – dùng làm key */
@@ -109,6 +110,7 @@ export class ProjectManagementComponent implements OnChanges {
   phases: ProjectPhaseApiDTO[] = [];
   isLoadingPhases   = false;
   phaseFormVisible  = false;
+  phaseView: 'card' | 'gantt' = 'card';
   editingPhaseId: number | null = null;
   phaseForm: Partial<ProjectPhaseApiDTO> = {};
   isSavingPhase  = false;
@@ -147,9 +149,20 @@ export class ProjectManagementComponent implements OnChanges {
     { value: 'completed', label: 'Hoàn thành'       }
   ];
 
+  // ── Clone dự án ────────────────────────────────────────────────
+  clonePanelOpen    = false;
+  cloneName         = '';
+  cloneNameError    = '';
+  isCloning         = false;
+  _cloneSourceProject: ProjectInfo | null = null;
+
+  // ── Export ──────────────────────────────────────────────────────
+  isExportingMembers = false;
+
   constructor(
     private eflowApi: EFlowApiService,
-    private excelService: ExcelImportService
+    private excelService: ExcelImportService,
+    private exportService: ExportService
   ) {
     try {
       const raw = localStorage.getItem(this.PROJ_META_KEY);
@@ -671,6 +684,35 @@ export class ProjectManagementComponent implements OnChanges {
     return Math.round(this.phases.reduce((s, p) => s + p.progress, 0) / this.phases.length);
   }
 
+  /** Compute Gantt bar positions (left% + width%) for each phase */
+  ganttBars(): { phase: ProjectPhaseApiDTO; left: number; width: number; tooNarrow: boolean }[] {
+    const dated = this.phases.filter(p => p.plannedStart && p.plannedEnd);
+    if (!dated.length) return [];
+
+    const toMs = (s: string) => new Date(s).getTime();
+    const minMs = Math.min(...dated.map(p => toMs(p.plannedStart!)));
+    const maxMs = Math.max(...dated.map(p => toMs(p.plannedEnd!)));
+    const span  = maxMs - minMs || 1;
+
+    return this.phases.map(p => {
+      if (!p.plannedStart || !p.plannedEnd) return { phase: p, left: 0, width: 0, tooNarrow: false };
+      const left  = ((toMs(p.plannedStart) - minMs) / span) * 100;
+      const width = Math.max(2, ((toMs(p.plannedEnd) - toMs(p.plannedStart)) / span) * 100);
+      return { phase: p, left, width, tooNarrow: width < 8 };
+    });
+  }
+
+  /** Gantt x-axis labels (start / mid / end) */
+  ganttAxisDates(): string[] {
+    const dated = this.phases.filter(p => p.plannedStart && p.plannedEnd);
+    if (!dated.length) return [];
+    const toMs  = (s: string) => new Date(s).getTime();
+    const minMs = Math.min(...dated.map(p => toMs(p.plannedStart!)));
+    const maxMs = Math.max(...dated.map(p => toMs(p.plannedEnd!)));
+    const fmt   = (ms: number) => new Date(ms).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    return [fmt(minMs), fmt((minMs + maxMs) / 2), fmt(maxMs)];
+  }
+
   private expandAllNodes(members: ProjectMember[]): void {
     members.forEach(m => {
       this.expandedNodes.add(m.employee.id);
@@ -1081,6 +1123,82 @@ export class ProjectManagementComponent implements OnChanges {
         this.buildProjects();
       },
       error: (err: any) => console.warn('[eFlow] Refresh failed:', err)
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  EXPORT
+  // ══════════════════════════════════════════════════════════════════════════
+
+  exportMembers(): void {
+    if (!this.selectedProject || this.isExportingMembers) return;
+    this.isExportingMembers = true;
+    try {
+      this.exportService.exportProjectMembers(this.selectedProject, this.selectedProject.members);
+    } finally {
+      this.isExportingMembers = false;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  CLONE PROJECT (PM-G10)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  openCloneProject(proj: ProjectInfo, event?: Event): void {
+    event?.stopPropagation();
+    this._cloneSourceProject = proj;
+    this.cloneName        = proj.name + ' (Copy)';
+    this.cloneNameError   = '';
+    this.clonePanelOpen   = true;
+  }
+
+  cancelClone(): void {
+    this.clonePanelOpen       = false;
+    this._cloneSourceProject  = null;
+    this.cloneName            = '';
+    this.cloneNameError       = '';
+  }
+
+  doCloneProject(): void {
+    const newName = this.cloneName.trim();
+    if (!newName) { this.cloneNameError = 'Tên dự án không được để trống'; return; }
+    if (this.projects.some(p => p.name.toLowerCase() === newName.toLowerCase())) {
+      this.cloneNameError = 'Tên dự án đã tồn tại'; return;
+    }
+    const src = this._cloneSourceProject;
+    if (!src) return;
+
+    this.isCloning = true;
+    const members = src.members;
+    if (!members.length) {
+      // No members to clone — create a dummy call just to persist the project name
+      this.isCloning = false;
+      this.cancelClone();
+      return;
+    }
+
+    let remaining = members.length;
+    const done = () => {
+      remaining--;
+      if (remaining <= 0) {
+        this.isCloning = false;
+        this.cancelClone();
+        this._autoSelectProjectName = newName;
+        this.refreshData();
+      }
+    };
+
+    members.forEach(m => {
+      const dto: ProjectApiDTO = {
+        id:         '',
+        employeeId: m.employee.id,
+        name:       newName,
+        role:       m.role,
+        startDate:  m.startDate,
+        endDate:    m.endDate,
+        status:     src.status as any
+      };
+      this.eflowApi.createProject(dto).subscribe({ next: done, error: done });
     });
   }
 }

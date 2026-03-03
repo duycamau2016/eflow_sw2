@@ -87,6 +87,9 @@
           <span class="ppc-progress-label">{{ getProjectProgress(proj.name) }}%</span>
         </div>
         <div class="ppc-actions" *ngIf="isAdmin">
+          <button class="ppc-action-btn" title="Nhân bản dự án" (click)="openCloneProject(proj, $event)">
+            <mat-icon>content_copy</mat-icon>
+          </button>
           <button class="ppc-action-btn" title="Sửa tên dự án" (click)="openEditProject(proj, $event)">
             <mat-icon>edit</mat-icon>
           </button>
@@ -119,6 +122,29 @@
         <mat-icon>delete_forever</mat-icon> {{ isDeleting ? 'Đang xoá...' : 'Xoá' }}
       </button>
       <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="deleteProjectConfirm = false">Huỷ</button>
+    </div>
+
+    <!-- Clone project panel -->
+    <div class="pm-clone-panel" *ngIf="clonePanelOpen">
+      <div class="pm-clone-inner">
+        <mat-icon class="pm-clone-icon">content_copy</mat-icon>
+        <div class="pm-clone-body">
+          <p class="pm-clone-title">Nhân bản dự án <strong>{{ _cloneSourceProject?.name }}</strong></p>
+          <div class="pm-form-field" [class.has-error]="cloneNameError">
+            <label>Tên dự án mới <span class="required">*</span></label>
+            <input type="text" [(ngModel)]="cloneName" placeholder="Nhập tên dự án mới..."
+              (keyup.enter)="doCloneProject()" autofocus />
+            <span class="pm-field-error" *ngIf="cloneNameError">{{ cloneNameError }}</span>
+          </div>
+        </div>
+        <div class="pm-clone-actions">
+          <button class="pm-btn pm-btn-primary pm-btn-sm" [disabled]="isCloning" (click)="doCloneProject()">
+            <mat-icon>{{ isCloning ? 'hourglass_top' : 'content_copy' }}</mat-icon>
+            {{ isCloning ? 'Đang nhân bản...' : 'Nhân bản' }}
+          </button>
+          <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="cancelClone()">Huỷ</button>
+        </div>
+      </div>
     </div>
 
     <!-- Detail header -->
@@ -158,8 +184,15 @@
         </div>
       </div>
       <div class="pdh-actions">
+        <button class="pm-btn pm-btn-success pm-btn-sm" (click)="exportMembers()" [disabled]="isExportingMembers"
+          title="Xuất danh sách thành viên ra Excel">
+          <mat-icon>{{ isExportingMembers ? 'hourglass_top' : 'download' }}</mat-icon>
+        </button>
         <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddMember()" *ngIf="isAdmin">
           <mat-icon>person_add</mat-icon> Thêm thành viên
+        </button>
+        <button class="pm-btn pm-btn-ghost pm-btn-sm" title="Nhân bản dự án" (click)="openCloneProject(selectedProject)" *ngIf="isAdmin">
+          <mat-icon>content_copy</mat-icon>
         </button>
         <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="openEditProject(selectedProject)" *ngIf="isAdmin">
           <mat-icon>edit</mat-icon>
@@ -623,6 +656,15 @@
             <div class="pf-progress-overall" *ngIf="phases.length > 0">
               Tổng tiến độ: <strong>{{ overallProgress() }}%</strong>
             </div>
+            <!-- View toggle -->
+            <div class="phase-view-toggle" *ngIf="phases.length > 0">
+              <button class="pv-toggle-btn" [class.active]="phaseView === 'card'" (click)="phaseView = 'card'" title="Card view">
+                <mat-icon>view_agenda</mat-icon>
+              </button>
+              <button class="pv-toggle-btn" [class.active]="phaseView === 'gantt'" (click)="phaseView = 'gantt'" title="Gantt view">
+                <mat-icon>bar_chart</mat-icon>
+              </button>
+            </div>
             <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddPhase()" *ngIf="!phaseFormVisible && isAdmin">
               <mat-icon>add</mat-icon> Thêm giai đoạn
             </button>
@@ -687,8 +729,8 @@
             <p>Chưa có giai đoạn nào</p>
           </div>
 
-          <!-- Phases list -->
-          <div class="pf-phase-list">
+          <!-- Phases list (Card view) -->
+          <div class="pf-phase-list" *ngIf="phaseView === 'card'">
             <div class="pf-phase-card" *ngFor="let p of phases" [class]="getPhaseStatusClass(p.status)">
               <div class="ppc-top-row">
                 <span class="ppc-phase-name">{{ p.name }}</span>
@@ -722,6 +764,34 @@
               </div>
 
               <div class="pf-phase-note" *ngIf="p.note">{{ p.note }}</div>
+            </div>
+          </div>
+
+          <!-- Gantt view -->
+          <div class="pf-gantt" *ngIf="phaseView === 'gantt' && phases.length > 0">
+            <div class="pf-gantt-axis">
+              <span *ngFor="let d of ganttAxisDates()">{{ d }}</span>
+            </div>
+            <div class="pf-gantt-rows">
+              <div class="pf-gantt-row" *ngFor="let bar of ganttBars()">
+                <div class="pf-gantt-label">{{ bar.phase.name }}</div>
+                <div class="pf-gantt-track">
+                  <div
+                    class="pf-gantt-bar"
+                    [class]="getPhaseStatusClass(bar.phase.status)"
+                    [style.left.%]="bar.left"
+                    [style.width.%]="bar.width"
+                    [title]="bar.phase.name + ' — ' + bar.phase.progress + '%'"
+                  >
+                    <div class="pf-gantt-fill" [style.width.%]="bar.phase.progress"></div>
+                    <span class="pf-gantt-pct" *ngIf="!bar.tooNarrow">{{ bar.phase.progress }}%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pf-gantt-empty" *ngIf="ganttBars().length === 0 || ganttBars()[0].width === 0">
+                <mat-icon>info_outline</mat-icon>
+                <span>Thêm ngày kế hoạch cho các giai đoạn để hiển thị Gantt</span>
+              </div>
             </div>
           </div>
         </div>

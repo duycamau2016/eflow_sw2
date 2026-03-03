@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { Employee, Project } from '../../models/employee.model';
 import { ExcelImportService } from '../../services/excel-import.service';
+import { ExportService } from '../../services/export.service';
 
 export type PanelMode = 'closed' | 'view' | 'edit' | 'create';
 
@@ -58,8 +59,9 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
   deleteConfirmId: string | null = null;
 
   // ─── Loading state ───────────────────────────────────────────
-  isSaving = false;
+  isSaving     = false;
   deletingId: string | null = null;
+  isExporting  = false;
   // ─── Form ─────────────────────────────────────────────────
   form: Partial<Employee> = {};
   formErrors: Record<string, string> = {};
@@ -71,7 +73,10 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     { value: 'all', label: 'Tất cả phòng ban' }
   ];
 
-  constructor(private excelService: ExcelImportService) {}
+  constructor(
+    private excelService: ExcelImportService,
+    private exportService: ExportService
+  ) {}
 
   ngOnInit(): void { this.loadChecklist(); }
 
@@ -317,6 +322,18 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     this.showOnlyOverloaded = false;
     this.showOnlyBench      = false;
     this.page               = 0;
+  }
+
+  exportEmployees(): void {
+    if (this.isExporting) return;
+    this.isExporting = true;
+    const list = this.filteredEmployees;
+    const label = this.hasActiveFilters ? `nhan_su_filter_${list.length}` : 'nhan_su_tat_ca';
+    try {
+      this.exportService.exportExcel(list, label);
+    } finally {
+      this.isExporting = false;
+    }
   }
 
   goTo(p: number): void {

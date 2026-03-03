@@ -11,6 +11,44 @@
     </div>
 
     <div class="toolbar-right">
+      <!-- Global Search -->
+      <div class="gs-wrap" *ngIf="hasData">
+        <div class="gs-input-row" [class.active]="globalSearchOpen">
+          <mat-icon class="gs-icon">search</mat-icon>
+          <input
+            class="gs-input"
+            type="text"
+            placeholder="Tìm nhân viên, dự án..."
+            [(ngModel)]="globalQuery"
+            (input)="globalSearchOpen = true"
+            (focus)="globalSearchOpen = true"
+            (blur)="onGlobalBlur()"
+            (keyup.escape)="globalQuery = ''; globalSearchOpen = false"
+          />
+          <mat-icon class="gs-clear" *ngIf="globalQuery" (mousedown)="$event.preventDefault()" (click)="globalQuery = ''; globalSearchOpen = false">close</mat-icon>
+        </div>
+        <div class="gs-dropdown" *ngIf="globalSearchOpen && globalQuery.length >= 1" (mousedown)="$event.preventDefault()">
+          <ng-container *ngIf="hasGlobalResults; else gsEmpty">
+            <div class="gs-group" *ngIf="globalResults.employees.length">
+              <div class="gs-group-label"><mat-icon>people</mat-icon> Nhân viên</div>
+              <button class="gs-item" *ngFor="let e of globalResults.employees" (click)="onGlobalSelectEmployee(e)">
+                <span class="gs-item-main">{{ e.name }}</span>
+                <span class="gs-item-sub">{{ e.position }} · {{ e.department }}</span>
+              </button>
+            </div>
+            <div class="gs-group" *ngIf="globalResults.projects.length">
+              <div class="gs-group-label"><mat-icon>work</mat-icon> Dự án</div>
+              <button class="gs-item" *ngFor="let p of globalResults.projects" (click)="onGlobalSelectProject(p)">
+                <span class="gs-item-main">{{ p }}</span>
+              </button>
+            </div>
+          </ng-container>
+          <ng-template #gsEmpty>
+            <div class="gs-empty">Không tìm thấy kết quả</div>
+          </ng-template>
+        </div>
+      </div>
+
       <!-- Stats chips when data loaded -->
       <div class="stats-bar" *ngIf="hasData">
         <div class="stat-chip">

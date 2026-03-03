@@ -1239,6 +1239,13 @@
     &:hover:not([disabled]) { background: #dc2626; }
   }
 
+  &.pm-btn-success {
+    background: transparent;
+    color: #16a34a;
+    border: 1px solid #22c55e;
+    &:hover:not([disabled]) { background: #dcfce7; }
+  }
+
   &.pm-btn-ghost {
     background: transparent;
     color: #546e7a;
@@ -1339,6 +1346,47 @@
 
   mat-icon { color: #d97706; flex-shrink: 0; }
   span { flex: 1; font-size: 13px; color: #78350f; }
+}
+
+.pm-clone-panel {
+  padding: 12px 16px;
+  background: #f0fdf4;
+  border-bottom: 2px solid #22c55e;
+  flex-shrink: 0;
+
+  .pm-clone-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .pm-clone-icon {
+    color: #16a34a;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  .pm-clone-body {
+    flex: 1;
+    min-width: 200px;
+
+    .pm-clone-title {
+      font-size: 13px;
+      color: #166534;
+      margin: 0 0 8px;
+    }
+
+    .pm-form-field { margin: 0; }
+  }
+
+  .pm-clone-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
 }
 
 // ── Table: action column ──────────────────────────────────────────────────────
@@ -1668,6 +1716,13 @@
     span { color: #fcd34d; }
   }
 
+  .pm-clone-panel {
+    background: #14532d;
+    border-bottom-color: #4ade80;
+    .pm-clone-title { color: #bbf7d0; }
+    .pm-btn-success { color: #4ade80; border-color: #4ade80; &:hover:not([disabled]) { background: #166534; } }
+  }
+
   .pm-tbl-action-btn {
     mat-icon { color: #94a3b8; }
     &:hover { background: #1e1b4b; mat-icon { color: #818cf8; } }
@@ -1847,6 +1902,31 @@ mat-icon.spin {
       font-size: 13px;
       color: #64748b;
     }
+
+    .phase-view-toggle {
+      display: flex;
+      gap: 2px;
+      margin-left: auto;
+    }
+
+    .pv-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      color: #94a3b8;
+      transition: background 0.15s, color 0.15s;
+
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+      &.active { background: #ede9fe; color: #4f46e5; border-color: #c4b5fd; }
+      &:hover:not(.active) { background: #f1f5f9; color: #475569; }
+    }
   }
 
   .pf-info-grid {
@@ -1956,6 +2036,97 @@ mat-icon.spin {
   padding: 12px 16px;
 }
 
+// Gantt view
+.pf-gantt {
+  padding: 12px 16px;
+}
+
+.pf-gantt-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #94a3b8;
+  padding: 0 0 4px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.pf-gantt-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-gantt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pf-gantt-label {
+  width: 120px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-gantt-track {
+  flex: 1;
+  height: 24px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pf-gantt-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 4px;
+  min-width: 4px;
+  background: #c7d2fe;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+
+  &.phase-on-track  { background: #c7d2fe; }
+  &.phase-at-risk   { background: #fde68a; }
+  &.phase-delayed   { background: #fecaca; }
+  &.phase-completed { background: #bbf7d0; }
+}
+
+.pf-gantt-fill {
+  height: 100%;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 4px 0 0 4px;
+}
+
+.pf-gantt-pct {
+  position: absolute;
+  right: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.pf-gantt-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 8px 0;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+// Phase cards
 .pf-phase-card {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -2145,4 +2316,30 @@ mat-icon.spin {
     .pf-phase-dates { color: #475569; }
     .pf-phase-note  { color: #64748b; }
   }
+
+  .phase-view-toggle .pv-toggle-btn {
+    border-color: #334155;
+    color: #475569;
+
+    &.active { background: #1e1b4b; color: #818cf8; border-color: #4f46e5; }
+    &:hover:not(.active) { background: #1e293b; color: #94a3b8; }
+  }
+
+  .pf-gantt-axis {
+    color: #475569;
+    border-bottom-color: #334155;
+  }
+
+  .pf-gantt-track { background: #0f172a; }
+
+  .pf-gantt-bar {
+    &.phase-on-track  { background: #3730a3; }
+    &.phase-at-risk   { background: #92400e; }
+    &.phase-delayed   { background: #7f1d1d; }
+    &.phase-completed { background: #14532d; }
+  }
+
+  .pf-gantt-pct { color: #f1f5f9; }
+  .pf-gantt-label { color: #cbd5e1; }
+  .pf-gantt-empty { color: #475569; mat-icon { color: #475569; } }
 }

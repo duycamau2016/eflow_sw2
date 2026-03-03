@@ -58,6 +58,30 @@
   mat-icon { font-size: 18px; width: 18px; height: 18px; margin-right: 4px; vertical-align: -2px; }
 }
 
+.em-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.em-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid #22c55e;
+  border-radius: 8px;
+  background: transparent;
+  color: #16a34a;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover:not(:disabled) { background: #dcfce7; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
 .em-filter-row {
   display: flex;
   align-items: center;
@@ -1040,6 +1064,8 @@
   .em-header  { background: #1e293b; border-bottom-color: #334155; }
 
   .em-header-top h2 { color: #f1f5f9; }
+
+  .em-export-btn { border-color: #4ade80; color: #4ade80; &:hover:not(:disabled) { background: #14532d; } }
 
   .em-search-input {
     background: #0f172a; border-color: transparent;

@@ -7,9 +7,16 @@
     <div class="em-header">
       <div class="em-header-top">
         <h2><mat-icon>manage_accounts</mat-icon> Quản lý Nhân sự</h2>
-        <button mat-flat-button color="primary" class="em-add-btn" (click)="openCreate()" *ngIf="isAdmin">
-          <mat-icon>person_add</mat-icon> Thêm nhân viên
-        </button>
+        <div class="em-header-actions">
+          <button class="em-export-btn" (click)="exportEmployees()" [disabled]="isExporting || allEmployees.length === 0"
+            [title]="hasActiveFilters ? 'Xuất ' + filteredEmployees.length + ' nhân viên (đang lọc)' : 'Xuất toàn bộ nhân viên ra Excel'">
+            <mat-icon>{{ isExporting ? 'hourglass_top' : 'download' }}</mat-icon>
+            <span>{{ isExporting ? '...' : 'Excel' }}</span>
+          </button>
+          <button mat-flat-button color="primary" class="em-add-btn" (click)="openCreate()" *ngIf="isAdmin">
+            <mat-icon>person_add</mat-icon> Thêm nhân viên
+          </button>
+        </div>
       </div>
 
       <!-- Search + filter row -->

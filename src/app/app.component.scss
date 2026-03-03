@@ -228,6 +228,117 @@
   mat-icon { font-size: 14px; width: 14px; height: 14px; }
 }
 
+// ── Global Search ─────────────────────────────────────────────────────────────
+.gs-wrap {
+  position: relative;
+  z-index: 500;
+
+  @media (max-width: 600px) { display: none; }
+}
+
+.gs-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  transition: background 0.2s, border-color 0.2s;
+  width: 200px;
+
+  &.active, &:focus-within {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.6);
+    width: 280px;
+  }
+
+  .gs-icon { font-size: 16px; width: 16px; height: 16px; color: rgba(255,255,255,0.7); flex-shrink: 0; }
+  .gs-clear { font-size: 14px; width: 14px; height: 14px; color: rgba(255,255,255,0.7); cursor: pointer; flex-shrink: 0; }
+}
+
+.gs-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 13px;
+  flex: 1;
+  min-width: 0;
+  &::placeholder { color: rgba(255,255,255,0.55); }
+}
+
+.gs-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  min-width: 280px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+  overflow: hidden;
+}
+
+.gs-group {
+  padding: 6px 0;
+  & + .gs-group { border-top: 1px solid #f1f5f9; }
+}
+
+.gs-group-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  mat-icon { font-size: 13px; width: 13px; height: 13px; }
+}
+
+.gs-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 6px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+  &:hover { background: #f0f4ff; }
+
+  .gs-item-main { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .gs-item-sub  { font-size: 11px; color: #64748b; margin-top: 1px; }
+}
+
+.gs-empty {
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+// Dark-theme overrides for gs-dropdown
+.dark-theme {
+  .gs-dropdown {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .gs-group + .gs-group { border-top-color: #334155; }
+  .gs-item {
+    &:hover { background: #1e1b4b; }
+    .gs-item-main { color: #f1f5f9; }
+    .gs-item-sub  { color: #64748b; }
+  }
+  .gs-empty { color: #475569; }
+}
+
 // -------------------------------------------------------
 // App body
 // -------------------------------------------------------
