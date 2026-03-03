@@ -719,18 +719,6 @@ export class ProjectManagementComponent implements OnChanges {
     }
   }
 
-  private toInputDate(value?: string): string {
-    if (!value) return '';
-    const p = value.split('/');
-    return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : value;
-  }
-
-  formatDisplayDate(value?: string): string {
-    if (!value) return '—';
-    const p = value.split('-');
-    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : value;
-  }
-
   // ══════════════════════════════════════════════════════════════════════════
   //  CRUD - DỰ ÁN
   // ══════════════════════════════════════════════════════════════════════════
@@ -842,8 +830,8 @@ export class ProjectManagementComponent implements OnChanges {
     this.memberForm = {
       employeeId: member.employee.id,
       role:       member.role ?? '',
-      startDate:  this.toInputDate(member.startDate),
-      endDate:    this.toInputDate(member.endDate)
+      startDate:  member.startDate ?? '',
+      endDate:    member.endDate   ?? ''
     };
     this.formErrors = {};
     this.panelMode  = 'edit-member';

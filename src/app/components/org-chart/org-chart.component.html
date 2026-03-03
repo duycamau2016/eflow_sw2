@@ -177,7 +177,10 @@
       class="chart-canvas"
       #chartCanvas
     >
-      <div class="chart-zoom-inner" #chartZoomInner [style.zoom]="zoomLevel">
+      <div class="chart-zoom-inner" #chartZoomInner
+        [style.zoom]="zoomLevel"
+        [style.transform]="'scale(' + zoomLevel + ')'"
+        [style.transformOrigin]="'top left'">
         <div *ngIf="filteredTree.length === 0" class="empty-chart">
           <mat-icon>account_tree</mat-icon>
           <p>Chưa có dữ liệu phân cấp</p>

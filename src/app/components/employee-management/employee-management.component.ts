@@ -1,17 +1,44 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { Employee, Project } from '../../models/employee.model';
 import { ExcelImportService } from '../../services/excel-import.service';
 
 export type PanelMode = 'closed' | 'view' | 'edit' | 'create';
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  category: 'it' | 'hr' | 'onboarding';
+  done: boolean;
+}
 
 @Component({
   selector: 'app-employee-management',
   templateUrl: './employee-management.component.html',
   styleUrls: ['./employee-management.component.scss']
 })
-export class EmployeeManagementComponent implements OnChanges {
+export class EmployeeManagementComponent implements OnChanges, OnInit {
   @Input() allEmployees: Employee[] = [];
   @Input() isAdmin = false;
+
+  // ─── Workload ────────────────────────────────────────────────
+  readonly WORKLOAD_THRESHOLD = 3;
+
+  // ─── Onboarding checklist ────────────────────────────────────
+  private readonly DEFAULT_CHECKLIST: ChecklistItem[] = [
+    { id: 'it1', label: 'Cấp email công ty',                category: 'it',         done: false },
+    { id: 'it2', label: 'Cấp máy tính / laptop',              category: 'it',         done: false },
+    { id: 'it3', label: 'Cài đặt phần mềm cần thiết',        category: 'it',         done: false },
+    { id: 'it4', label: 'Cấp tài khoản hệ thống (Jira, Slack…)', category: 'it',         done: false },
+    { id: 'hr1', label: 'Ký hợp đồng lao động',               category: 'hr',         done: false },
+    { id: 'hr2', label: 'Cấp thẻ nhân viên',                 category: 'hr',         done: false },
+    { id: 'hr3', label: 'Đăng ký bảo hiểm xã hội',           category: 'hr',         done: false },
+    { id: 'hr4', label: 'Chụp ảnh hồ sơ công ty',             category: 'hr',         done: false },
+    { id: 'ob1', label: 'Giới thiệu với team',               category: 'onboarding', done: false },
+    { id: 'ob2', label: 'Đào tạo quy trình làm việc',         category: 'onboarding', done: false },
+    { id: 'ob3', label: 'Hướng dẫn nội quy công ty',          category: 'onboarding', done: false },
+    { id: 'ob4', label: 'Tham quan / làm quen văn phòng',     category: 'onboarding', done: false },
+  ];
+  checklistMap: Record<string, ChecklistItem[]> = {};
 
   // ─── List state ─────────────────────────────────────────────
   searchQuery  = '';
@@ -41,6 +68,8 @@ export class EmployeeManagementComponent implements OnChanges {
   ];
 
   constructor(private excelService: ExcelImportService) {}
+
+  ngOnInit(): void { this.loadChecklist(); }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['allEmployees']) {
@@ -128,6 +157,62 @@ export class EmployeeManagementComponent implements OnChanges {
     const pages: number[] = [];
     for (let i = start; i <= end; i++) pages.push(i);
     return pages;
+  }
+
+  // ─── Workload helpers ────────────────────────────────────────
+  getActiveProjectCount(emp: Employee): number {
+    return (emp.projects ?? []).filter(p => p.status === 'active').length;
+  }
+
+  getWorkloadLevel(emp: Employee): 'ok' | 'busy' | 'overload' {
+    const a = this.getActiveProjectCount(emp);
+    if (a > this.WORKLOAD_THRESHOLD) return 'overload';
+    if (a >= 2) return 'busy';
+    return 'ok';
+  }
+
+  get overloadedCount(): number {
+    return this.allEmployees.filter(e => this.getActiveProjectCount(e) > this.WORKLOAD_THRESHOLD).length;
+  }
+
+  // ─── Onboarding checklist ────────────────────────────────────
+  private loadChecklist(): void {
+    try {
+      const saved = localStorage.getItem('eflow_onboarding');
+      if (saved) this.checklistMap = JSON.parse(saved);
+    } catch {}
+  }
+
+  private saveChecklist(): void {
+    localStorage.setItem('eflow_onboarding', JSON.stringify(this.checklistMap));
+  }
+
+  getChecklist(empId: string): ChecklistItem[] {
+    if (!this.checklistMap[empId]) {
+      this.checklistMap[empId] = this.DEFAULT_CHECKLIST.map(i => ({ ...i }));
+      this.saveChecklist();
+    }
+    return this.checklistMap[empId];
+  }
+
+  getChecklistByCategory(empId: string, cat: ChecklistItem['category']): ChecklistItem[] {
+    return this.getChecklist(empId).filter(i => i.category === cat);
+  }
+
+  getChecklistProgress(empId: string): { done: number; total: number; pct: number } {
+    const list = this.getChecklist(empId);
+    const done = list.filter(i => i.done).length;
+    return { done, total: list.length, pct: Math.round((done / list.length) * 100) };
+  }
+
+  toggleCheckItem(empId: string, itemId: string): void {
+    const item = this.getChecklist(empId).find(i => i.id === itemId);
+    if (item) { item.done = !item.done; this.saveChecklist(); }
+  }
+
+  resetChecklist(empId: string): void {
+    this.checklistMap[empId] = this.DEFAULT_CHECKLIST.map(i => ({ ...i }));
+    this.saveChecklist();
   }
 
   // ─── Helpers ─────────────────────────────────────────────────

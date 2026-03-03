@@ -1591,6 +1591,16 @@
 }
 
 // ═══════════════════════════════════════════════════════════
+// Tab body – scrollable wrapper cho nội dung các tab
+// ═══════════════════════════════════════════════════════════
+.pm-tab-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+// ═══════════════════════════════════════════════════════════
 // Finance Tab (Tài chính)
 // ═══════════════════════════════════════════════════════════
 mat-icon.spin {
@@ -1704,6 +1714,9 @@ mat-icon.spin {
 
   .pf-info-form {
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
 
   .pf-form-actions {
@@ -1718,6 +1731,9 @@ mat-icon.spin {
     padding: 16px;
     border-bottom: 1px solid #f1f5f9;
     background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
 
 }

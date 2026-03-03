@@ -39,6 +39,9 @@
         <div class="em-stats-chips">
           <span class="em-chip"><mat-icon>people</mat-icon>{{ filteredEmployees.length }} / {{ allEmployees.length }}</span>
           <span class="em-chip"><mat-icon>business</mat-icon>{{ departments.length }} phòng ban</span>
+          <span class="em-chip em-chip-warn" *ngIf="overloadedCount > 0" [title]="overloadedCount + ' nhân viên đang overload (>' + WORKLOAD_THRESHOLD + ' dự án active)'">
+            <mat-icon>warning</mat-icon>{{ overloadedCount }} overload
+          </span>
         </div>
       </div>
     </div>
@@ -78,7 +81,7 @@
               <mat-icon *ngIf="sortCol === 'joinDate'">{{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
             </th>
             <th class="col-projects">Dự án</th>
-            <th class="col-actions"></th>
+            <th class="col-actions" aria-label="Thao tác"></th>
           </tr>
         </thead>
         <tbody>
@@ -105,10 +108,16 @@
             <td class="col-phone">{{ emp.phone || '—' }}</td>
             <td class="col-joindate">{{ emp.joinDate || '—' }}</td>
             <td class="col-projects">
-              <span class="em-proj-count" *ngIf="emp.projects?.length">
-                <mat-icon>work</mat-icon>{{ emp.projects!.length }}
-              </span>
-              <span *ngIf="!emp.projects?.length" class="em-no-proj">—</span>
+              <ng-container *ngIf="(emp.projects?.length ?? 0) > 0; else noProjTpl">
+                <span class="em-workload-badge wl-{{ getWorkloadLevel(emp) }}"
+                  [title]="getActiveProjectCount(emp) + ' active / ' + emp.projects!.length + ' tổng dự án'">
+                  <mat-icon>bolt</mat-icon>
+                  {{ getActiveProjectCount(emp) }}<span class="wl-sep">/</span>{{ emp.projects!.length }}
+                </span>
+              </ng-container>
+              <ng-template #noProjTpl>
+                <span class="em-no-proj">—</span>
+              </ng-template>
             </td>
             <td class="col-actions" (click)="$event.stopPropagation()">
               <ng-container *ngIf="isAdmin">
@@ -158,25 +167,27 @@
   </div>
 
   <!-- ══════════════ POPUP MODAL ══════════════ -->
-  <div class="em-modal-overlay" *ngIf="panelMode !== 'closed'" (click)="closePanel()">
-    <div class="em-modal" [class.modal-wide]="panelMode === 'edit' || panelMode === 'create'" (click)="$event.stopPropagation()">
+  <div class="em-modal-overlay" *ngIf="panelMode !== 'closed'" (click)="closePanel()" role="presentation">
+    <div class="em-modal" [class.modal-wide]="panelMode === 'edit' || panelMode === 'create'"
+      role="dialog" aria-modal="true" aria-labelledby="em-modal-title"
+      (click)="$event.stopPropagation()">
 
       <!-- Modal header -->
       <div class="em-modal-header">
         <div class="em-panel-title">
           <mat-icon>{{ panelMode === 'create' ? 'person_add' : panelMode === 'edit' ? 'edit' : 'person' }}</mat-icon>
-          <span>{{
+          <span id="em-modal-title">{{
             panelMode === 'create' ? 'Thêm nhân viên mới' :
             panelMode === 'edit'   ? 'Chỉnh sửa nhân viên' :
                                      'Chi tiết nhân viên'
           }}</span>
         </div>
         <div class="em-panel-actions" *ngIf="panelMode === 'view' && selectedEmployee">
-          <button mat-icon-button title="Chỉnh sửa" (click)="switchToEdit()" *ngIf="isAdmin"><mat-icon>edit</mat-icon></button>
-          <button mat-icon-button class="delete-btn" title="Xóa" (click)="confirmDelete(selectedEmployee.id)" *ngIf="isAdmin"><mat-icon>delete</mat-icon></button>
-          <button mat-icon-button title="Đóng" (click)="closePanel()"><mat-icon>close</mat-icon></button>
+          <button mat-icon-button title="Chỉnh sửa" aria-label="Chỉnh sửa nhân viên" (click)="switchToEdit()" *ngIf="isAdmin"><mat-icon>edit</mat-icon></button>
+          <button mat-icon-button class="delete-btn" title="Xóa" aria-label="Xóa nhân viên" (click)="confirmDelete(selectedEmployee.id)" *ngIf="isAdmin"><mat-icon>delete</mat-icon></button>
+          <button mat-icon-button title="Đóng" aria-label="Đóng hộp thoại" (click)="closePanel()"><mat-icon>close</mat-icon></button>
         </div>
-        <button mat-icon-button title="Đóng" (click)="closePanel()" *ngIf="panelMode !== 'view'"><mat-icon>close</mat-icon></button>
+        <button mat-icon-button title="Đóng" aria-label="Đóng hộp thoại" (click)="closePanel()" *ngIf="panelMode !== 'view'"><mat-icon>close</mat-icon></button>
       </div>
 
       <!-- Modal body -->
@@ -255,9 +266,63 @@
               </div>
             </div>
           </div>
-        </ng-container>
+          <!-- Onboarding Checklist -->
+          <div class="em-view-section em-checklist-section">
+            <div class="em-checklist-header">
+              <h4><mat-icon>checklist_rtl</mat-icon> Onboarding Checklist</h4>
+              <div class="em-checklist-actions">
+                <span class="em-checklist-pct" [class.pct-done]="getChecklistProgress(emp.id).pct === 100">
+                  {{ getChecklistProgress(emp.id).pct }}%
+                </span>
+                <button mat-icon-button class="em-ck-reset-btn" title="Reset checklist"
+                  (click)="resetChecklist(emp.id)" *ngIf="isAdmin">
+                  <mat-icon>refresh</mat-icon>
+                </button>
+              </div>
+            </div>
 
-        <!-- ── EDIT / CREATE MODE ── -->
+            <div class="em-ck-progress-wrap">
+              <div class="em-ck-progress-bar">
+                <div class="em-ck-progress-fill" [style.width.%]="getChecklistProgress(emp.id).pct"
+                  [class.complete]="getChecklistProgress(emp.id).pct === 100"></div>
+              </div>
+              <span class="em-ck-progress-text">
+                {{ getChecklistProgress(emp.id).done }}/{{ getChecklistProgress(emp.id).total }} mục
+              </span>
+            </div>
+
+            <!-- IT -->
+            <div class="em-ck-group">
+              <div class="em-ck-group-label"><mat-icon>computer</mat-icon> IT</div>
+              <div class="em-ck-item" *ngFor="let item of getChecklistByCategory(emp.id, 'it')"
+                [class.done]="item.done" (click)="toggleCheckItem(emp.id, item.id)">
+                <mat-icon class="ck-icon">{{ item.done ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                <span>{{ item.label }}</span>
+              </div>
+            </div>
+
+            <!-- HR -->
+            <div class="em-ck-group">
+              <div class="em-ck-group-label"><mat-icon>badge</mat-icon> Hồ sơ & HR</div>
+              <div class="em-ck-item" *ngFor="let item of getChecklistByCategory(emp.id, 'hr')"
+                [class.done]="item.done" (click)="toggleCheckItem(emp.id, item.id)">
+                <mat-icon class="ck-icon">{{ item.done ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                <span>{{ item.label }}</span>
+              </div>
+            </div>
+
+            <!-- Onboarding -->
+            <div class="em-ck-group">
+              <div class="em-ck-group-label"><mat-icon>school</mat-icon> Tiếp nhận</div>
+              <div class="em-ck-item" *ngFor="let item of getChecklistByCategory(emp.id, 'onboarding')"
+                [class.done]="item.done" (click)="toggleCheckItem(emp.id, item.id)">
+                <mat-icon class="ck-icon">{{ item.done ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                <span>{{ item.label }}</span>
+              </div>
+            </div>
+          </div>
+
+        </ng-container>
         <ng-container *ngIf="panelMode === 'edit' || panelMode === 'create'">
           <form class="em-form" (ngSubmit)="saveEmployee()" #f="ngForm">
 

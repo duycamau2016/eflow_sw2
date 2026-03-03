@@ -22,6 +22,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 // Components
 import { AppRoutingModule } from './app-routing.module';
@@ -34,6 +36,8 @@ import { ProjectManagementComponent } from './components/project-management/proj
 import { EmployeeManagementComponent } from './components/employee-management/employee-management.component';
 import { LoginComponent } from './components/login/login.component';
 import { SearchableSelectComponent } from './components/searchable-select/searchable-select.component';
+import { FormatDatePipe } from './pipes/format-date.pipe';
+import { DateInputComponent } from './components/date-input/date-input.component';
 
 @NgModule({
   declarations: [
@@ -45,7 +49,9 @@ import { SearchableSelectComponent } from './components/searchable-select/search
     ProjectManagementComponent,
     EmployeeManagementComponent,
     LoginComponent,
-    SearchableSelectComponent
+    SearchableSelectComponent,
+    FormatDatePipe,
+    DateInputComponent
   ],
   imports: [
     BrowserModule,
@@ -71,6 +77,8 @@ import { SearchableSelectComponent } from './components/searchable-select/search
     MatSidenavModule,
     MatListModule,
     MatProgressBarModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     HttpClientModule
   ],
   providers: [],

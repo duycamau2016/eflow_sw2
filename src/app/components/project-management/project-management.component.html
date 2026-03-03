@@ -132,15 +132,16 @@
       <button class="pm-tab-btn" [class.active]="detailTab === 'members'" (click)="switchTab('members')">
         <mat-icon>people</mat-icon> Thành viên
       </button>
-      <ng-container *ngIf="isAdmin">
-        <button class="pm-tab-btn" [class.active]="detailTab === 'finance'" (click)="switchTab('finance')">
-          <mat-icon>account_balance_wallet</mat-icon> Tài chính
-        </button>
-        <button class="pm-tab-btn" [class.active]="detailTab === 'progress'" (click)="switchTab('progress')">
-          <mat-icon>timeline</mat-icon> Tiến độ
-        </button>
-      </ng-container>
+      <button class="pm-tab-btn" [class.active]="detailTab === 'finance'" (click)="switchTab('finance')">
+        <mat-icon>account_balance_wallet</mat-icon> Tài chính
+      </button>
+      <button class="pm-tab-btn" [class.active]="detailTab === 'progress'" (click)="switchTab('progress')">
+        <mat-icon>timeline</mat-icon> Tiến độ
+      </button>
     </div>
+
+    <!-- Tab content (scrollable) -->
+    <div class="pm-tab-body">
 
     <!-- ── TAB: THÀNH VIÊN ── -->
     <ng-container *ngIf="detailTab === 'members'">
@@ -261,8 +262,8 @@
               <td class="col-position">{{ m.employee.position }}</td>
               <td class="col-dept">{{ m.employee.department || '—' }}</td>
               <td class="col-role"><span class="pm-node-role">{{ m.role || 'Thành viên' }}</span></td>
-              <td class="col-start">{{ m.startDate || '—' }}</td>
-              <td class="col-end">{{ m.endDate || '—' }}</td>
+              <td class="col-start">{{ m.startDate | formatDate }}</td>
+              <td class="col-end">{{ m.endDate | formatDate }}</td>
               <td class="col-actions">
                 <ng-container *ngIf="isAdmin">
                   <button class="pm-tbl-action-btn" title="Sửa" (click)="openEditMember(m)">
@@ -352,7 +353,7 @@
         <div class="pf-section">
           <div class="pf-section-header">
             <h3><mat-icon>description</mat-icon> Thông tin Hợp đồng</h3>
-            <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="openEditInfo()" *ngIf="!isEditingInfo">
+            <button class="pm-btn pm-btn-ghost pm-btn-sm" (click)="openEditInfo()" *ngIf="!isEditingInfo && isAdmin">
               <mat-icon>{{ projectInfo ? 'edit' : 'add' }}</mat-icon>
               {{ projectInfo ? 'Chỉnh sửa' : 'Nhập thông tin' }}
             </button>
@@ -362,13 +363,14 @@
           <div class="pf-info-grid" *ngIf="!isEditingInfo && projectInfo">
             <div class="pfi-row"><span class="pfi-label">Khách hàng</span><span class="pfi-value">{{ projectInfo.customer || '—' }}</span></div>
             <div class="pfi-row"><span class="pfi-label">Số Hợp đồng</span><span class="pfi-value">{{ projectInfo.contractNumber || '—' }}</span></div>
-            <div class="pfi-row"><span class="pfi-label">Ngày bắt đầu</span><span class="pfi-value">{{ projectInfo.startDate || '—' }}</span></div>
-            <div class="pfi-row"><span class="pfi-label">Ngày kết thúc</span><span class="pfi-value">{{ projectInfo.endDate || '—' }}</span></div>
+            <div class="pfi-row"><span class="pfi-label">Ngày bắt đầu</span><span class="pfi-value">{{ projectInfo.startDate | formatDate }}</span></div>
+            <div class="pfi-row"><span class="pfi-label">Ngày kết thúc</span><span class="pfi-value">{{ projectInfo.endDate | formatDate }}</span></div>
             <div class="pfi-row full"><span class="pfi-label">Mô tả</span><span class="pfi-value">{{ projectInfo.description || '—' }}</span></div>
           </div>
           <div class="pf-empty-hint" *ngIf="!isEditingInfo && !projectInfo">
             <mat-icon>info_outline</mat-icon>
-            <span>Chưa có thông tin tài chính. Nhấn "Nhập thông tin" để bắt đầu.</span>
+            <span *ngIf="isAdmin">Chưa có thông tin tài chính. Nhấn "Nhập thông tin" để bắt đầu.</span>
+            <span *ngIf="!isAdmin">Chưa có thông tin tài chính cho dự án này.</span>
           </div>
 
           <!-- Edit form -->
@@ -386,30 +388,30 @@
             <div class="pm-form-row">
               <div class="pm-form-field">
                 <label>Ngày bắt đầu</label>
-                <input type="date" [(ngModel)]="infoForm.startDate" />
+                <app-date-input [(ngModel)]="infoForm.startDate" placeholder="Ngày bắt đầu"></app-date-input>
               </div>
               <div class="pm-form-field">
                 <label>Ngày kết thúc</label>
-                <input type="date" [(ngModel)]="infoForm.endDate" />
+                <app-date-input [(ngModel)]="infoForm.endDate" placeholder="Ngày kết thúc"></app-date-input>
               </div>
             </div>
             <div class="pm-form-row">
               <div class="pm-form-field">
-                <label>Giá trị HĐ (VNĐ)</label>
+                <label>Giá trị Hợp đồng (VNĐ)</label>
                 <input type="text" inputmode="numeric"
                   [value]="toVndStr(infoForm.contractValue)"
                   (input)="onVndInput($event, infoForm, 'contractValue')"
                   placeholder="0" />
               </div>
               <div class="pm-form-field">
-                <label>Chi phí KH (VNĐ)</label>
+                <label>Chi phí Kế hoạch (VNĐ)</label>
                 <input type="text" inputmode="numeric"
                   [value]="toVndStr(infoForm.plannedCost)"
                   (input)="onVndInput($event, infoForm, 'plannedCost')"
                   placeholder="0" />
               </div>
               <div class="pm-form-field">
-                <label>Chi phí TT (VNĐ)</label>
+                <label>Chi phí Thực tế (VNĐ)</label>
                 <input type="text" inputmode="numeric"
                   [value]="toVndStr(infoForm.actualCost)"
                   (input)="onVndInput($event, infoForm, 'actualCost')"
@@ -434,7 +436,7 @@
         <div class="pf-section">
           <div class="pf-section-header">
             <h3><mat-icon>receipt_long</mat-icon> Mốc Xuất Hóa đơn</h3>
-            <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddMilestone()" *ngIf="!milestoneFormVisible">
+            <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddMilestone()" *ngIf="!milestoneFormVisible && isAdmin">
               <mat-icon>add</mat-icon> Thêm mốc
             </button>
           </div>
@@ -457,11 +459,11 @@
             <div class="pm-form-row">
               <div class="pm-form-field">
                 <label>Ngày kế hoạch</label>
-                <input type="date" [(ngModel)]="milestoneForm.plannedDate" />
+                <app-date-input [(ngModel)]="milestoneForm.plannedDate" placeholder="Ngày kế hoạch"></app-date-input>
               </div>
               <div class="pm-form-field">
                 <label>Ngày thực tế</label>
-                <input type="date" [(ngModel)]="milestoneForm.actualDate" />
+                <app-date-input [(ngModel)]="milestoneForm.actualDate" placeholder="Ngày thực tế"></app-date-input>
               </div>
               <div class="pm-form-field">
                 <label>Trạng thái</label>
@@ -496,8 +498,8 @@
                 <th>#</th>
                 <th>Tên mốc</th>
                 <th>Số tiền</th>
-                <th>Ngày KH</th>
-                <th>Ngày TT</th>
+                <th>Ngày kế hoạch</th>
+                <th>Ngày thực tế</th>
                 <th>Trạng thái</th>
                 <th>Thao tác</th>
               </tr>
@@ -518,12 +520,14 @@
                   <td>{{ i + 1 }}</td>
                   <td><span [class.pf-overdue-badge]="m.overdue">{{ m.name }}</span><mat-icon *ngIf="m.overdue" class="overdue-icon" title="Quá hạn">warning</mat-icon></td>
                   <td>{{ formatVnd(m.amount) }}</td>
-                  <td>{{ m.plannedDate || '—' }}</td>
-                  <td>{{ m.actualDate || '—' }}</td>
+                  <td>{{ m.plannedDate | formatDate }}</td>
+                  <td>{{ m.actualDate | formatDate }}</td>
                   <td><span class="pf-ms-badge" [class]="getMilestoneStatusClass(m.status)">{{ milestoneStatusLabel[m.status] }}</span></td>
                   <td>
-                    <button class="pm-tbl-action-btn" title="Sửa" (click)="openEditMilestone(m)"><mat-icon>edit</mat-icon></button>
-                    <button class="pm-tbl-action-btn danger" title="Xoá" (click)="confirmDeleteMilestone(m.id!)"><mat-icon>delete</mat-icon></button>
+                    <ng-container *ngIf="isAdmin">
+                      <button class="pm-tbl-action-btn" title="Sửa" (click)="openEditMilestone(m)"><mat-icon>edit</mat-icon></button>
+                      <button class="pm-tbl-action-btn danger" title="Xoá" (click)="confirmDeleteMilestone(m.id!)"><mat-icon>delete</mat-icon></button>
+                    </ng-container>
                   </td>
                 </tr>
               </ng-container>
@@ -548,7 +552,7 @@
             <div class="pf-progress-overall" *ngIf="phases.length > 0">
               Tổng tiến độ: <strong>{{ overallProgress() }}%</strong>
             </div>
-            <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddPhase()" *ngIf="!phaseFormVisible">
+            <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openAddPhase()" *ngIf="!phaseFormVisible && isAdmin">
               <mat-icon>add</mat-icon> Thêm giai đoạn
             </button>
           </div>
@@ -572,19 +576,19 @@
             <div class="pm-form-row">
               <div class="pm-form-field">
                 <label>Ngày bắt đầu KH</label>
-                <input type="date" [(ngModel)]="phaseForm.plannedStart" />
+                <app-date-input [(ngModel)]="phaseForm.plannedStart" placeholder="Ngày bắt đầu KH"></app-date-input>
               </div>
               <div class="pm-form-field">
                 <label>Ngày kết thúc KH</label>
-                <input type="date" [(ngModel)]="phaseForm.plannedEnd" />
+                <app-date-input [(ngModel)]="phaseForm.plannedEnd" placeholder="Ngày kết thúc KH"></app-date-input>
               </div>
               <div class="pm-form-field">
                 <label>Ngày bắt đầu TT</label>
-                <input type="date" [(ngModel)]="phaseForm.actualStart" />
+                <app-date-input [(ngModel)]="phaseForm.actualStart" placeholder="Ngày bắt đầu TT"></app-date-input>
               </div>
               <div class="pm-form-field">
                 <label>Ngày kết thúc TT</label>
-                <input type="date" [(ngModel)]="phaseForm.actualEnd" />
+                <app-date-input [(ngModel)]="phaseForm.actualEnd" placeholder="Ngày kết thúc TT"></app-date-input>
               </div>
             </div>
             <div class="pm-form-row">
@@ -642,8 +646,8 @@
 
               <!-- Dates -->
               <div class="pf-phase-dates">
-                <span><mat-icon>event</mat-icon> KH: {{ p.plannedStart || '—' }} → {{ p.plannedEnd || '—' }}</span>
-                <span><mat-icon>check_circle</mat-icon> TT: {{ p.actualStart || '—' }} → {{ p.actualEnd || '—' }}</span>
+                <span><mat-icon>event</mat-icon> Kế hoạch: {{ p.plannedStart | formatDate }} → {{ p.plannedEnd | formatDate }}</span>
+                <span><mat-icon>check_circle</mat-icon> Thực tế: {{ p.actualStart | formatDate }} → {{ p.actualEnd | formatDate }}</span>
               </div>
 
               <div class="pf-phase-note" *ngIf="p.note">{{ p.note }}</div>
@@ -652,6 +656,8 @@
         </div>
       </ng-container><!-- /!isLoadingPhases -->
     </ng-container><!-- /tab: progress -->
+
+    </div><!-- /pm-tab-body -->
 
     </ng-container><!-- /selectedProject && panelMode==='closed' -->
 
@@ -717,11 +723,11 @@
           <div class="pm-form-row">
             <div class="pm-form-field">
               <label>Ngày bắt đầu</label>
-              <input type="date" [(ngModel)]="memberForm.startDate" />
+              <app-date-input [(ngModel)]="memberForm.startDate" placeholder="Ngày bắt đầu"></app-date-input>
             </div>
             <div class="pm-form-field">
               <label>Ngày kết thúc</label>
-              <input type="date" [(ngModel)]="memberForm.endDate" />
+              <app-date-input [(ngModel)]="memberForm.endDate" placeholder="Ngày kết thúc"></app-date-input>
             </div>
           </div>
 

@@ -65,12 +65,294 @@ body.dark-theme {
   padding: 0 !important;
 }
 
+// Fix cho Angular Material v15 MDC
+.mat-mdc-dialog-surface {
+  border-radius: 12px !important;
+  padding: 0 !important;
+}
+
 .snack-success {
-  background: #4caf50;
+  background: #2e7d32 !important;
   color: white;
 }
 
 .snack-error {
   background: #f44336;
   color: white;
+}
+
+// ─── Global :focus-visible ring ─────────────────────────────────────────────────────
+*:focus { outline: none; }
+*:focus-visible {
+  outline: 2px solid #3f51b5;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+body.dark-theme *:focus-visible {
+  outline-color: #818cf8;
+}
+
+// ─── Reduced motion ───────────────────────────────────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  // Giữ transition body nhưng rút ngắn lại
+  body { transition: none !important; }
+}
+
+// ─── Custom Datepicker Panel ────────────────────────────────────────────────
+// Light theme
+.app-datepicker-panel {
+  border-radius: 16px !important;
+  overflow: visible !important;
+  border: none !important;
+  box-shadow: none !important;
+
+  // mat-datepicker-content là phần thực sự render popup
+  mat-datepicker-content,
+  .mat-datepicker-content {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    border: 1px solid #dde3ef !important;
+    box-shadow: 0 16px 48px rgba(63, 81, 181, 0.18), 0 2px 8px rgba(0,0,0,0.08) !important;
+    display: block !important;
+  }
+
+  // ── Calendar container ──
+  .mat-calendar,
+  .mat-datepicker-content .mat-calendar {
+    background: #ffffff !important;
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+    width: 296px !important;
+  }
+
+  // ── Header (tháng/năm + nav) ──
+  .mat-calendar-header {
+    background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%) !important;
+    padding: 16px 12px 12px !important;
+  }
+
+  .mat-calendar-period-button {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    letter-spacing: 0.3px !important;
+  }
+
+  .mat-calendar-previous-button,
+  .mat-calendar-next-button {
+    color: rgba(255,255,255,0.85) !important;
+    &:hover { color: #ffffff !important; background: rgba(255,255,255,0.12) !important; }
+  }
+
+  .mat-calendar-arrow { fill: #ffffff !important; }
+
+  // ── Day-of-week headers ──
+  .mat-calendar-table-header th {
+    color: #6b7dad !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .mat-calendar-table-header-divider::after {
+    background: #e8edf5 !important;
+  }
+
+  // ── Ẩn label tháng trong bảng (JAN, FEB...) ──
+  .mat-calendar-body-label {
+    opacity: 0 !important;
+    padding: 0 !important;
+  }
+
+  // ── Ngày bình thường ──
+  .mat-calendar-body-cell-content {
+    color: #1e293b !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    border-radius: 50% !important;
+    transition: background 0.15s, color 0.15s !important;
+  }
+
+  // ── Ngày bị disabled ──
+  .mat-calendar-body-disabled .mat-calendar-body-cell-content {
+    color: #c8d0de !important;
+  }
+
+  // ── Ngày được chọn ──
+  .mat-calendar-body-selected {
+    background: #3f51b5 !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 10px rgba(63, 81, 181, 0.5) !important;
+  }
+
+  // ── Hôm nay ──
+  .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+    border: 2px solid #3f51b5 !important;
+    color: #3f51b5 !important;
+    background: rgba(63, 81, 181, 0.07) !important;
+    font-weight: 700 !important;
+  }
+
+  // ── Hover ──
+  .mat-calendar-body-cell:not(.mat-calendar-body-disabled):hover
+    .mat-calendar-body-cell-content:not(.mat-calendar-body-selected) {
+    background: rgba(63, 81, 181, 0.12) !important;
+    color: #3f51b5 !important;
+  }
+
+  .mat-ripple-element { background: rgba(63, 81, 181, 0.1) !important; }
+}
+
+// ─── Dark theme ─────────────────────────────────────────────────────────────
+body.dark-theme .app-datepicker-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+
+  mat-datepicker-content,
+  .mat-datepicker-content {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    border: 1px solid #2d3f55 !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0,0,0,0.4) !important;
+    background: #1a2540 !important;
+    display: block !important;
+  }
+
+  // ── Header ──
+  .mat-calendar-header {
+    background: linear-gradient(135deg, #151f36 0%, #1e2d4a 100%) !important;
+    border-bottom: 1px solid #2d3f55 !important;
+  }
+
+  .mat-calendar-period-button {
+    color: #e2e8f0 !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+  }
+
+  .mat-calendar-previous-button,
+  .mat-calendar-next-button {
+    color: #7c93b8 !important;
+    &:hover { color: #c5d4eb !important; background: rgba(255,255,255,0.06) !important; }
+  }
+
+  .mat-calendar-arrow { fill: #7c93b8 !important; }
+
+  // ── Day-of-week headers ──
+  .mat-calendar-table-header th {
+    color: #4e6480 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+  }
+
+  .mat-calendar-table-header-divider::after {
+    background: #2d3f55 !important;
+  }
+
+  // ── Ẩn label tháng trong bảng ──
+  .mat-calendar-body-label {
+    opacity: 0 !important;
+    padding: 0 !important;
+  }
+
+  // ── Ngày bình thường ──
+  .mat-calendar-body-cell-content {
+    color: #c5d4eb !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    border-radius: 50% !important;
+    transition: background 0.15s, color 0.15s !important;
+  }
+
+  // ── Ngày bị disabled ──
+  .mat-calendar-body-disabled .mat-calendar-body-cell-content {
+    color: #2d3f55 !important;
+  }
+
+  // ── Ngày được chọn ──
+  .mat-calendar-body-selected {
+    background: #4f5fcc !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 10px rgba(79, 95, 204, 0.55) !important;
+  }
+
+  // ── Hôm nay ──
+  .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+    border: 2px solid #818cf8 !important;
+    color: #a5b4fc !important;
+    background: rgba(129, 140, 248, 0.1) !important;
+    font-weight: 700 !important;
+  }
+
+  // ── Hover ──
+  .mat-calendar-body-cell:not(.mat-calendar-body-disabled):hover
+    .mat-calendar-body-cell-content:not(.mat-calendar-body-selected) {
+    background: rgba(99, 102, 241, 0.22) !important;
+    color: #a5b4fc !important;
+  }
+
+  .mat-ripple-element { background: rgba(129, 140, 248, 0.15) !important; }
+}
+
+// Fallback: target mat-datepicker-content trực tiếp trong overlay
+body.dark-theme .cdk-overlay-container mat-datepicker-content,
+body.dark-theme .cdk-overlay-container .mat-datepicker-content {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  border: 1px solid #2d3f55 !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0,0,0,0.4) !important;
+  background: #1a2540 !important;
+}
+
+body.dark-theme .cdk-overlay-container .mat-datepicker-content-container,
+body.dark-theme .cdk-overlay-container mat-calendar,
+body.dark-theme .cdk-overlay-container .mat-calendar,
+body.dark-theme .cdk-overlay-container .mat-calendar-content {
+  background: #1a2540 !important;
+  color: #c5d4eb !important;
+}
+
+body.dark-theme .cdk-overlay-container .mat-calendar-body-cell-content {
+  color: #c5d4eb !important;
+}
+
+body.dark-theme .cdk-overlay-container .mat-calendar-body-selected {
+  background: #4f5fcc !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(79, 95, 204, 0.55) !important;
+}
+
+body.dark-theme .cdk-overlay-container .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+  border: 2px solid #818cf8 !important;
+  color: #a5b4fc !important;
+  background: rgba(129, 140, 248, 0.1) !important;
+}
+
+body.dark-theme .cdk-overlay-container .mat-calendar-table-header th {
+  color: #4e6480 !important;
+}
+
+body.dark-theme .cdk-overlay-container .mat-calendar-header {
+  background: linear-gradient(135deg, #151f36 0%, #1e2d4a 100%) !important;
+  border-bottom: 1px solid #2d3f55 !important;
+}
+
+body.dark-theme .cdk-overlay-container .mat-calendar-period-button {
+  color: #e2e8f0 !important;
+}
+
+body.dark-theme .cdk-overlay-container .mat-calendar-previous-button,
+body.dark-theme .cdk-overlay-container .mat-calendar-next-button {
+  color: #7c93b8 !important;
 }

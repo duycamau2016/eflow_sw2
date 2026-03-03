@@ -34,12 +34,13 @@
         [disabled]="isLoading"
         required
       />
-      <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" [tabIndex]="-1">
+      <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword"
+        [attr.aria-label]="hidePassword ? 'Hiện mật khẩu' : 'Ẩn mật khẩu'">
         <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
       </button>
     </mat-form-field>
 
-    <div class="error-msg" *ngIf="errorMsg">
+    <div class="error-msg" *ngIf="errorMsg" role="alert" aria-live="assertive">
       <mat-icon>error_outline</mat-icon>
       {{ errorMsg }}
     </div>

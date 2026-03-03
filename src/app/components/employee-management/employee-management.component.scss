@@ -292,6 +292,139 @@
 
 .em-no-proj { color: #bdbdbd; font-size: 12px; }
 
+// ── F9: Overload warning chip ────────────────────────────────────
+.em-chip-warn {
+  background: #fff3e0;
+  color: #e65100;
+  mat-icon { color: #f57c00; font-size: 14px; width: 14px; height: 14px; }
+}
+
+// ── F9: Workload badge in projects column ────────────────────────
+.em-workload-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 7px;
+  cursor: default;
+
+  .wl-sep   { opacity: 0.5; margin: 0 1px; font-weight: 400; }
+  mat-icon  { font-size: 12px; width: 12px; height: 12px; }
+
+  &.wl-ok       { background: #e8f5e9; color: #2e7d32; mat-icon { color: #43a047; } }
+  &.wl-busy     { background: #fff8e1; color: #f57f17; mat-icon { color: #fb8c00; } }
+  &.wl-overload { background: #fce4ec; color: #c62828; mat-icon { color: #e53935; } }
+}
+
+// ── F10: Onboarding Checklist ────────────────────────────────────
+.em-checklist-section { margin-top: 4px; }
+
+.em-checklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+
+  h4 { margin: 0; padding: 0; border-bottom: none; }
+}
+
+.em-checklist-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.em-checklist-pct {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  &.pct-done { color: #16a34a; }
+}
+
+.em-ck-reset-btn {
+  width: 28px !important;
+  height: 28px !important;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; color: #94a3b8; }
+}
+
+.em-ck-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.em-ck-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #e8eaf0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.em-ck-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #818cf8);
+  border-radius: 10px;
+  transition: width 0.35s ease;
+  &.complete { background: linear-gradient(90deg, #16a34a, #4ade80); }
+}
+
+.em-ck-progress-text {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.em-ck-group {
+  margin-bottom: 14px;
+}
+
+.em-ck-group-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+
+.em-ck-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #334155;
+  transition: background 0.12s;
+  user-select: none;
+
+  &:hover { background: #f0f3ff; }
+
+  &.done {
+    color: #94a3b8;
+    text-decoration: line-through;
+    .ck-icon { color: #4f46e5; }
+  }
+}
+
+.ck-icon {
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
+  color: #cbd5e1;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
 // Action buttons
 .em-action-btn {
   width: 28px !important;
@@ -969,6 +1102,35 @@
 
   .em-form-footer { border-top-color: #334155; }
   .em-no-data { color: #475569; }
+
+  // F9 dark
+  .em-chip-warn {
+    background: #431407;
+    color: #fdba74;
+    mat-icon { color: #fb923c; }
+  }
+
+  .em-workload-badge {
+    &.wl-ok       { background: #14532d; color: #86efac; mat-icon { color: #4ade80; } }
+    &.wl-busy     { background: #431407; color: #fdba74; mat-icon { color: #fb923c; } }
+    &.wl-overload { background: #450a0a; color: #fca5a5; mat-icon { color: #f87171; } }
+  }
+
+  // F10 dark
+  .em-checklist-pct { color: #64748b; &.pct-done { color: #4ade80; } }
+  .em-ck-reset-btn mat-icon { color: #475569; }
+  .em-ck-progress-bar { background: #1e293b; }
+  .em-ck-progress-text { color: #475569; }
+  .em-ck-group-label { color: #475569; }
+  .em-ck-item {
+    color: #cbd5e1;
+    &:hover { background: #1e1b4b; }
+    &.done {
+      color: #475569;
+      .ck-icon { color: #818cf8; }
+    }
+  }
+  .ck-icon { color: #334155; }
 }
 
 // ── Loading / spinner inside buttons ─────────────────────────────

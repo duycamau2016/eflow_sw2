@@ -1,0 +1,35 @@
+<div class="date-input-wrapper" [class.invalid]="isInvalid" [class.disabled]="isDisabled">
+  <mat-icon class="date-icon" (click)="!isDisabled && picker.open()"
+    (keydown.enter)="!isDisabled && picker.open()"
+    (keydown.space)="!isDisabled && picker.open()"
+    role="button" [attr.tabindex]="isDisabled ? -1 : 0" aria-label="Mở lịch chọn ngày"
+    title="Chọn ngày">calendar_today</mat-icon>
+  <input
+    type="text"
+    inputmode="numeric"
+    [placeholder]="placeholder"
+    [value]="displayValue"
+    [disabled]="isDisabled"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+    maxlength="10"
+    autocomplete="off"
+  />
+  <!-- Hidden mat-datepicker trigger -->
+  <input
+    [matDatepicker]="picker"
+    [value]="pickerDate"
+    [disabled]="isDisabled"
+    (dateChange)="onMatDateChange($event)"
+    class="hidden-mat-input"
+    tabindex="-1"
+    aria-hidden="true"
+    readonly
+  />
+  <mat-datepicker #picker panelClass="app-datepicker-panel"></mat-datepicker>
+  <mat-icon class="clear-icon" *ngIf="displayValue"
+    (click)="onClear()" (keydown.enter)="onClear()" (keydown.space)="onClear()"
+    role="button" tabindex="0" aria-label="Xóa ngày" title="Xoá">close</mat-icon>
+</div>
+<span class="date-input-error" *ngIf="isInvalid">Ngày không hợp lệ (dd/MM/yyyy)</span>
+
