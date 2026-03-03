@@ -1,7 +1,195 @@
 # eFlow SW2 — Frontend (Angular)
 
-Ứng dụng **Angular** quản lý sơ đồ tổ chức và dự án nhân sự SW2.  
+Ứng dụng **Angular 15** quản lý nhân sự, sơ đồ tổ chức, dự án và phòng ban.  
 Kết nối với [eFlow Service](../../eFlowService) (Spring Boot REST API chạy trên cổng **8099**).
+
+---
+
+## 🚀 Cài đặt & Chạy
+
+### Yêu cầu
+| Công cụ | Phiên bản tối thiểu |
+|---------|-------------------|
+| Node.js | 18.x trở lên |
+| npm     | 9.x trở lên |
+| Angular CLI | 15.x trở lên |
+
+### Các bước
+
+```bash
+# 1. Di chuyển vào thư mục FE
+cd eFlowFE/eflow_sw2
+
+# 2. Cài đặt dependencies
+npm install
+
+# 3. Chạy development server
+npm start
+```
+
+Truy cập: **http://localhost:4200**
+
+> ⚠️ Cần khởi động **eFlow Service** trước (port 8099) để có đầy đủ chức năng CRUD.  
+> Nếu service chưa khởi động, app tự động fallback về file Excel mẫu (`assets/data/`).
+
+---
+
+## ✨ Tính năng
+
+### 🔐 Xác thực & Phân quyền
+- Đăng nhập qua dialog (không reload trang)
+- Phiên đăng nhập lưu trong `sessionStorage`
+- **Admin** — toàn quyền: import Excel, thêm/sửa/xoá nhân viên, dự án, phòng ban
+- **Khách** — chỉ xem
+
+### 📊 Sơ đồ Tổ chức
+- Sơ đồ phân cấp nhân sự dạng cây (org-chart)
+- Zoom in/out (Ctrl+Scroll / pinch) và pan (kéo chuột)
+- Thu gọn/mở rộng từng nhánh
+- Click node để xem chi tiết nhân viên
+
+### 👥 Quản lý Nhân sự
+- Danh sách nhân viên toàn công ty (bảng + phân trang 10 dòng)
+- Tìm kiếm theo tên, mã NV, chức vụ, email
+- Lọc theo phòng ban, cấp bậc, overload, bench
+- Sort theo cột
+- CRUD đầy đủ: Thêm / Sửa / Xoá nhân viên
+- Xem chi tiết: dự án đang tham gia, cấp dưới, checklist onboarding
+- **Xuất Excel** danh sách nhân viên (có/không lọc)
+- **Xuất PDF** danh sách nhân viên (A4 landscape, jsPDF manual table)
+- Badge workload: OK / Busy / Overload
+- Thâm niên tính tự động từ ngày vào làm
+
+### 🏢 Quản lý Phòng ban
+- Màn hình riêng trong sidebar (menu "Phòng ban")
+- Danh sách phòng ban + số nhân viên + thanh tỉ lệ
+- Thống kê: tổng phòng ban, tổng nhân viên, phòng ban chưa có NV
+- CRUD: Thêm / Đổi tên (inline edit, Enter/Esc) / Xoá (có confirm)
+- Sort theo tên hoặc số nhân viên
+- Phân trang (15 dòng/trang)
+- **Lưu database** — dữ liệu persist qua `GET/POST/PUT/DELETE /api/departments`
+- Seed tự động phòng ban từ dữ liệu import nhân viên
+
+### 📁 Quản lý Dự án
+- Sidebar danh sách dự án + panel chi tiết
+- Tìm kiếm & lọc theo trạng thái
+- CRUD đầy đủ: Tạo dự án, thêm thành viên, sửa, đổi tên, xoá
+- Chế độ xem: Sơ đồ cây hoặc Bảng danh sách
+- **Tài chính dự án**: hợp đồng, kế hoạch chi phí, thực tế, profit margin
+- **Mốc hóa đơn** (SIT/UAT/PAT…): số tiền, ngày kế hoạch/thực tế, trạng thái
+- **Giai đoạn dự án**: Gantt chart, tiến độ %, trạng thái on_track/at_risk/delayed
+- **Clone dự án** (copy toàn bộ cấu trúc)
+- **Xuất Excel** danh sách thành viên dự án
+
+### 📥 Import Excel
+- Import file `.xlsx` / `.xls`
+- Tự động sync lên Spring Boot API
+- Hỗ trợ tải file Excel mẫu (55 nhân viên, 6 dự án)
+- Chỉ **Admin** mới có quyền import
+
+### 🔍 Searchable Select
+- Component dùng chung `app-searchable-select`
+- Click-to-open, ô tìm kiếm trong dropdown
+- `position: fixed` — thoát khỏi mọi `overflow: hidden`
+- Tự động mở lên trên nếu không đủ chỗ phía dưới viewport
+
+### 🌙 Dark Theme
+- Toggle light/dark từ toolbar
+- Tất cả component hỗ trợ `:host-context(.dark-theme)`
+
+### 🔍 Global Search
+- Tìm kiếm toàn cục: nhân viên + dự án cùng lúc
+- Kết quả click → navigate thẳng đến item
+
+---
+
+## 📋 Cấu trúc file Excel Import
+
+### Sheet 1: `Nhân sự`
+| Cột | Trường | Mô tả |
+|-----|--------|-------|
+| A | ID | Mã nhân viên (duy nhất) |
+| B | Họ và tên | Tên đầy đủ |
+| C | Chức vụ | Vị trí công việc |
+| D | Phòng ban | Phòng/bộ phận |
+| E | Email | Địa chỉ email |
+| F | SĐT | Số điện thoại |
+| G | ID quản lý | Mã NV cấp trên (để trống = gốc) |
+| H | Ngày vào làm | Định dạng `dd/MM/yyyy` |
+
+### Sheet 2: `Dự án`
+| Cột | Trường | Mô tả |
+|-----|--------|-------|
+| A | ID nhân viên | Mã NV tham gia |
+| B | Tên dự án | Tên dự án |
+| C | Vai trò | Vai trò trong dự án |
+| D | Ngày bắt đầu | `dd/MM/yyyy` |
+| E | Ngày kết thúc | `dd/MM/yyyy` (để trống = đang tiếp tục) |
+| F | Trạng thái | `active` / `completed` / `pending` |
+
+---
+
+## 🏗️ Kiến trúc
+
+```
+src/app/
+├── app.module.ts
+├── app.component.ts/html/scss      # Shell: sidebar nav, dark theme toggle
+├── app-routing.module.ts
+├── models/
+│   └── employee.model.ts           # Interfaces: Employee, Project, OrgNode
+├── services/
+│   ├── eflow-api.service.ts        # HTTP client → Spring Boot REST API
+│   ├── department.service.ts       # Dept CRUD — gọi /api/departments
+│   ├── auth.service.ts             # Xác thực (sessionStorage)
+│   ├── excel-import.service.ts     # Parse Excel → sync to API
+│   └── export.service.ts           # Xuất Excel (SheetJS) + PDF (jsPDF)
+└── components/
+    ├── excel-import/               # Upload & import Excel (Admin only)
+    ├── org-chart/                  # Sơ đồ tổ chức (container + recursive node)
+    ├── employee-detail/            # Panel chi tiết nhân viên
+    ├── employee-management/        # CRUD nhân sự (bảng + form + export)
+    ├── project-management/         # CRUD dự án (sidebar + panels + Gantt)
+    ├── department-management/      # CRUD phòng ban (bảng + DB-backed)
+    ├── searchable-select/          # Reusable dropdown có tìm kiếm
+    └── login/                      # Dialog đăng nhập
+```
+
+---
+
+## 🔗 API kết nối
+
+```typescript
+// src/environments/environment.ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8099/api'
+};
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend (Angular) | http://localhost:4200 |
+| Backend (Spring Boot) | http://localhost:8099 |
+| Swagger UI | http://localhost:8099/swagger-ui.html |
+| H2 Console (DB) | http://localhost:8099/h2-console |
+
+---
+
+## 🛠️ Tech Stack
+
+| Thành phần | Công nghệ |
+|-----------|-----------|
+| Framework | Angular 15 |
+| UI Components | Angular Material |
+| Icons | Google Material Icons |
+| Styles | SCSS + CSS Variables |
+| HTTP Client | Angular HttpClient + RxJS |
+| Excel Parse/Export | SheetJS (xlsx) |
+| PDF Export | jsPDF (manual table, no html2canvas) |
+| Build tool | Angular CLI / Webpack |
+| Auth | Stateless session (sessionStorage) |
+
 
 ---
 
