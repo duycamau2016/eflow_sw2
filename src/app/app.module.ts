@@ -38,6 +38,7 @@ import { LoginComponent } from './components/login/login.component';
 import { SearchableSelectComponent } from './components/searchable-select/searchable-select.component';
 import { FormatDatePipe } from './pipes/format-date.pipe';
 import { DateInputComponent } from './components/date-input/date-input.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
 
 @NgModule({
   declarations: [
@@ -51,7 +52,8 @@ import { DateInputComponent } from './components/date-input/date-input.component
     LoginComponent,
     SearchableSelectComponent,
     FormatDatePipe,
-    DateInputComponent
+    DateInputComponent,
+    DashboardComponent
   ],
   imports: [
     BrowserModule,

@@ -96,6 +96,19 @@
         <span class="nav-label">Trang chủ</span>
       </button>
 
+      <!-- Dashboard -->
+      <button
+        class="nav-item"
+        [class.active]="activeMenu === 'dashboard'"
+        (click)="selectMenu('dashboard')"
+        matTooltip="Dashboard tổng quan"
+        matTooltipPosition="right"
+        aria-label="Dashboard tổng quan"
+      >
+        <mat-icon>dashboard</mat-icon>
+        <span class="nav-label">Dashboard</span>
+      </button>
+
       <!-- Tổ chức -->
       <button
         class="nav-item"
@@ -231,6 +244,13 @@
             <mat-icon>login</mat-icon> Đăng nhập
           </button>
         </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="chart-section" *ngIf="hasData && !isSampleLoading && activeMenu === 'dashboard'">
+        <app-dashboard
+          [allEmployees]="allEmployees"
+        ></app-dashboard>
       </div>
 
       <!-- Org Chart -->

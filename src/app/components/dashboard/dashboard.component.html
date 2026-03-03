@@ -1,0 +1,228 @@
+<div class="db-root">
+
+  <!-- ── Header ── -->
+  <div class="db-header">
+    <div class="db-header-left">
+      <mat-icon class="db-header-icon">dashboard</mat-icon>
+      <div>
+        <h2>Dashboard Tổng quan</h2>
+        <span class="db-date">{{ todayStr }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scrollable content ── -->
+  <div class="db-scroll">
+
+    <!-- ════ KPI Cards ════ -->
+    <div class="db-kpi-grid">
+
+      <!-- 1. Tổng nhân viên -->
+      <div class="kpi-card kpi-indigo">
+        <div class="kpi-icon-wrap"><mat-icon>people</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ totalEmployees }}</div>
+          <div class="kpi-label">Tổng nhân viên</div>
+          <div class="kpi-badge kpi-badge-green" *ngIf="newThisMonth > 0">
+            <mat-icon>trending_up</mat-icon>+{{ newThisMonth }} tháng này
+          </div>
+          <div class="kpi-badge kpi-badge-slate" *ngIf="newThisMonth === 0">
+            <mat-icon>remove</mat-icon>Không có NV mới
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Phòng ban -->
+      <div class="kpi-card kpi-cyan">
+        <div class="kpi-icon-wrap"><mat-icon>business</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ departmentCount }}</div>
+          <div class="kpi-label">Phòng ban</div>
+          <div class="kpi-badge kpi-badge-slate">
+            <mat-icon>layers</mat-icon>{{ levelCount }} cấp bậc
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Dự án đang chạy -->
+      <div class="kpi-card kpi-green">
+        <div class="kpi-icon-wrap"><mat-icon>play_circle</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ activeProjectCount }}</div>
+          <div class="kpi-label">Dự án đang chạy</div>
+          <div class="kpi-badge kpi-badge-slate">
+            <mat-icon>folder_special</mat-icon>{{ totalProjectCount }} tổng
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Dự án hoàn thành -->
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-icon-wrap"><mat-icon>task_alt</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ completedProjectCount }}</div>
+          <div class="kpi-label">Dự án hoàn thành</div>
+          <div class="kpi-badge kpi-badge-amber">
+            <mat-icon>pending</mat-icon>{{ pendingProjectCount }} đang chờ
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. NV Overload -->
+      <div class="kpi-card" [class.kpi-red]="overloadedCount > 0" [class.kpi-slate]="overloadedCount === 0">
+        <div class="kpi-icon-wrap"><mat-icon>warning</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ overloadedCount }}</div>
+          <div class="kpi-label">NV overload</div>
+          <div class="kpi-badge" [class.kpi-badge-green]="overloadedCount === 0" [class.kpi-badge-red]="overloadedCount > 0">
+            <mat-icon>{{ overloadedCount === 0 ? 'check_circle' : 'error_outline' }}</mat-icon>
+            {{ overloadedCount === 0 ? 'Tất cả trong ngưỡng' : '> 3 dự án active' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. TB dự án / NV -->
+      <div class="kpi-card kpi-purple">
+        <div class="kpi-icon-wrap"><mat-icon>bar_chart</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ avgProjectsPerEmployee }}</div>
+          <div class="kpi-label">TB dự án / NV</div>
+          <div class="kpi-badge kpi-badge-slate">
+            <mat-icon>work_outline</mat-icon>{{ totalProjectCount }} dự án tổng
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /kpi-grid -->
+
+    <!-- ════ Charts Row ════ -->
+    <div class="db-row">
+
+      <!-- Dept distribution bar chart -->
+      <div class="db-card db-card-dept">
+        <div class="db-card-header">
+          <mat-icon>donut_large</mat-icon>
+          <span>Cơ cấu nhân sự theo Phòng ban</span>
+        </div>
+        <div class="db-card-body">
+          <div *ngIf="deptStats.length === 0" class="db-empty">
+            <mat-icon>inbox</mat-icon><span>Không có dữ liệu</span>
+          </div>
+          <div class="dept-row" *ngFor="let d of deptStats">
+            <span class="dept-name" [title]="d.name">{{ d.name }}</span>
+            <div class="dept-bar-wrap">
+              <div class="dept-bar-fill" [style.width.%]="d.pct" [style.background]="d.color"></div>
+            </div>
+            <span class="dept-count">{{ d.count }}</span>
+            <span class="dept-pct">{{ d.pct }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project status donut -->
+      <div class="db-card db-card-donut">
+        <div class="db-card-header">
+          <mat-icon>pie_chart</mat-icon>
+          <span>Trạng thái Dự án</span>
+        </div>
+        <div class="db-card-body donut-body">
+          <div class="donut-wrap">
+            <div class="donut" [style.background]="projectDonutStyle">
+              <div class="donut-hole">
+                <span class="donut-total">{{ totalProjectCount }}</span>
+                <span class="donut-label">dự án</span>
+              </div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#10b981"></span>
+              <span class="legend-name">Đang thực hiện</span>
+              <span class="legend-val">{{ activeProjectCount }}</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#3b82f6"></span>
+              <span class="legend-name">Hoàn thành</span>
+              <span class="legend-val">{{ completedProjectCount }}</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#f59e0b"></span>
+              <span class="legend-name">Chờ triển khai</span>
+              <span class="legend-val">{{ pendingProjectCount }}</span>
+            </div>
+            <div class="legend-progress-wrap">
+              <div class="legend-progress-label">
+                <span>Tiến độ active</span>
+                <span class="legend-progress-pct">{{ projectActivePercent }}%</span>
+              </div>
+              <div class="legend-progress-bar">
+                <div class="legend-progress-fill" [style.width.%]="projectActivePercent"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /charts row -->
+
+    <!-- ════ Lists Row ════ -->
+    <div class="db-row">
+
+      <!-- Recent employees -->
+      <div class="db-card db-card-recent">
+        <div class="db-card-header">
+          <mat-icon>person_add</mat-icon>
+          <span>Nhân viên mới nhất</span>
+          <span class="db-card-count">{{ recentEmployees.length }}</span>
+        </div>
+        <div class="db-card-body">
+          <div *ngIf="recentEmployees.length === 0" class="db-empty">
+            <mat-icon>inbox</mat-icon><span>Không có dữ liệu</span>
+          </div>
+          <div class="recent-item" *ngFor="let emp of recentEmployees">
+            <div class="recent-avatar" [style.background]="getAvatarColor(emp.name)">
+              {{ getInitials(emp.name) }}
+            </div>
+            <div class="recent-info">
+              <span class="recent-name">{{ emp.name }}</span>
+              <span class="recent-meta">{{ emp.position }} · {{ emp.department }}</span>
+            </div>
+            <span class="recent-date">{{ emp.joinDate | formatDate }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top projects -->
+      <div class="db-card db-card-topproj">
+        <div class="db-card-header">
+          <mat-icon>leaderboard</mat-icon>
+          <span>Top Dự án (theo thành viên)</span>
+          <span class="db-card-count">{{ topProjects.length }}</span>
+        </div>
+        <div class="db-card-body">
+          <div *ngIf="topProjects.length === 0" class="db-empty">
+            <mat-icon>inbox</mat-icon><span>Không có dự án</span>
+          </div>
+          <div class="proj-item" *ngFor="let p of topProjects; let i = index">
+            <span class="proj-rank">#{{ i + 1 }}</span>
+            <div class="proj-info">
+              <div class="proj-name-row">
+                <span class="proj-name">{{ p.name }}</span>
+                <span class="proj-status-badge" [ngClass]="'pstatus-' + p.status">
+                  {{ getStatusLabel(p.status) }}
+                </span>
+              </div>
+              <div class="proj-bar-wrap">
+                <div class="proj-bar-fill" [style.width.%]="(p.memberCount / getMaxMemberCount()) * 100"
+                  [ngClass]="'pbar-' + p.status"></div>
+              </div>
+            </div>
+            <span class="proj-count">{{ p.memberCount }} NV</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /lists row -->
+
+  </div><!-- /db-scroll -->
+</div>

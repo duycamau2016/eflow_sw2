@@ -5,7 +5,7 @@ import { ExcelImportService } from './services/excel-import.service';
 import { AuthService } from './services/auth.service';
 import { LoginComponent } from './components/login/login.component';
 
-type ActiveMenu = 'orgchart' | 'projects' | 'employees' | 'import' | 'none';
+type ActiveMenu = 'dashboard' | 'orgchart' | 'projects' | 'employees' | 'import' | 'none';
 
 @Component({
   selector: 'app-root',
@@ -62,7 +62,7 @@ export class AppComponent {
     this.hasData = result.employees.length > 0;
     if (this.hasData) {
       this.showImportPanel = false;
-      this.activeMenu = 'orgchart';
+      this.activeMenu = 'dashboard';
     }
   }
 
@@ -86,6 +86,10 @@ export class AppComponent {
   selectMenu(menu: ActiveMenu): void {
     this.activeMenu = menu;
     this.isMobileNavOpen = false;
+    if (menu === 'dashboard') {
+      if (!this.hasData) this.loadSampleData();
+      else this.showImportPanel = false;
+    }
     if (menu === 'orgchart') {
       if (!this.hasData) {
         this.loadSampleData();
@@ -112,6 +116,7 @@ export class AppComponent {
         this.importResult = result;
         this.hasData = true;
         this.showImportPanel = false;
+        if (this.activeMenu === 'none') this.activeMenu = 'dashboard';
         this.isSampleLoading = false;
         console.log(`[eFlow] Loaded ${result.total} employees from API`);
         return;
