@@ -233,16 +233,6 @@
       />
       <mat-icon *ngIf="memberSearch" class="clear-icon" (click)="memberSearch=''; onMemberSearchChange()">close</mat-icon>
 
-      <!-- Dept filter (show only when project has members from multiple depts) -->
-      <div class="pms-dept-filter" *ngIf="memberDeptOptions.length > 2">
-        <app-searchable-select
-          [options]="memberDeptOptions"
-          [value]="memberDeptFilter"
-          (valueChange)="memberDeptFilter = $event; tablePage = 0"
-          placeholder="Tất cả phòng">
-        </app-searchable-select>
-      </div>
-
       <!-- View toggle -->
       <div class="pm-view-toggle">
         <button mat-icon-button
@@ -264,7 +254,7 @@
         <button mat-icon-button title="Thu nhỏ" (click)="zoomOut()" [disabled]="zoomLevel <= MIN_ZOOM">
           <mat-icon>zoom_out</mat-icon>
         </button>
-        <button mat-stroked-button class="zoom-label" (click)="resetZoom()">{{ zoomPercent }}%</button>
+        <button mat-stroked-button class="zoom-label" (click)="fitToFrame()" title="Vừa khung hình">{{ zoomPercent }}%</button>
         <button mat-icon-button title="Phóng to" (click)="zoomIn()" [disabled]="zoomLevel >= MAX_ZOOM">
           <mat-icon>zoom_in</mat-icon>
         </button>

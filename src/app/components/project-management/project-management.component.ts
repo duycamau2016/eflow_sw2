@@ -47,7 +47,6 @@ export class ProjectManagementComponent implements OnChanges {
   // ── Tìm kiếm / lọc ───────────────────────────────────────────────────────
   searchQuery     = '';
   memberSearch    = '';
-  memberDeptFilter = 'all';
   memberSortCol: string = 'name';
   memberSortDir: 'asc' | 'desc' = 'asc';
   statusFilter    = 'all';
@@ -233,6 +232,26 @@ export class ProjectManagementComponent implements OnChanges {
   zoomOut(): void { this.zoomLevel = Math.max(this.MIN_ZOOM, +(this.zoomLevel - 0.1).toFixed(2)); }
   resetZoom(): void { this.zoomLevel = 0.7; setTimeout(() => this.scrollToCenter(), 50); }
 
+  fitToFrame(): void {
+    const wrapper = this.treeWrapperRef?.nativeElement;
+    if (!wrapper) { this.zoomLevel = 0.7; return; }
+    const inner = wrapper.querySelector<HTMLElement>('.pm-tree-zoom-inner');
+    const roots = wrapper.querySelector<HTMLElement>('.pm-roots-container');
+    if (!inner || !roots) { this.zoomLevel = 0.7; return; }
+    // Đặt zoom=1 tạm để đo kích thước tự nhiên (không bị ảnh hưởng bởi zoom hiện tại)
+    const s = inner.style as any;
+    const saved = s.zoom;
+    s.zoom = '1';
+    const naturalW = roots.offsetWidth;
+    s.zoom = saved;
+    if (naturalW <= 0) { this.zoomLevel = 0.7; return; }
+    const availW = wrapper.clientWidth - 48; // padding 24px × 2
+    if (availW <= 0) { this.zoomLevel = 0.7; return; }
+    // Fit theo chiều rộng, tối đa 100% (không phóng to quá nguyên bản)
+    this.zoomLevel = Math.min(1.0, Math.max(this.MIN_ZOOM, +(availW / naturalW).toFixed(2)));
+    setTimeout(() => this.scrollToCenter(), 50);
+  }
+
   // Pan state
   isPanning = false;
   hasDragged = false;
@@ -411,7 +430,6 @@ export class ProjectManagementComponent implements OnChanges {
   selectProject(proj: ProjectInfo | null): void {
     this.selectedProject      = proj;
     this.memberSearch         = '';
-    this.memberDeptFilter     = 'all';
     this.memberSortCol        = 'name';
     this.memberSortDir        = 'asc';
     this.statusPopoverOpen    = false;
@@ -787,8 +805,7 @@ export class ProjectManagementComponent implements OnChanges {
           m.employee.position?.toLowerCase().includes(q) ||
           m.employee.department?.toLowerCase().includes(q) ||
           m.role?.toLowerCase().includes(q);
-        const matchDept = this.memberDeptFilter === 'all' || m.employee.department === this.memberDeptFilter;
-        return matchSearch && matchDept;
+        return matchSearch;
       })
       .sort((a, b) => {
         let va: any, vb: any;
@@ -808,19 +825,6 @@ export class ProjectManagementComponent implements OnChanges {
 
   onMemberSearchChange(): void {
     this.tablePage = 0;
-  }
-
-  get memberDeptOptions(): { value: string; label: string }[] {
-    const depts = new Set(
-      (this.selectedProject?.members ?? [])
-        .map(m => m.employee.department)
-        .filter((d): d is string => !!d)
-    );
-    const sorted = Array.from(depts).sort((a, b) => a.localeCompare(b, 'vi'));
-    return [
-      { value: 'all', label: 'Tất cả phòng ban' },
-      ...sorted.map(d => ({ value: d, label: d }))
-    ];
   }
 
   sortMember(col: string): void {
