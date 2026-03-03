@@ -36,11 +36,30 @@
           </app-searchable-select>
         </div>
 
+        <div class="em-dept-filter">
+          <mat-icon>stairs</mat-icon>
+          <app-searchable-select
+            [options]="levelSelectOptions"
+            [value]="levelFilter"
+            (valueChange)="levelFilter = $event; page = 0"
+            placeholder="Tất cả cấp bậc"
+            searchPlaceholder="Tìm cấp bậc...">
+          </app-searchable-select>
+        </div>
+
         <div class="em-stats-chips">
           <span class="em-chip"><mat-icon>people</mat-icon>{{ filteredEmployees.length }} / {{ allEmployees.length }}</span>
           <span class="em-chip"><mat-icon>business</mat-icon>{{ departments.length }} phòng ban</span>
-          <span class="em-chip em-chip-warn" *ngIf="overloadedCount > 0" [title]="overloadedCount + ' nhân viên đang overload (>' + WORKLOAD_THRESHOLD + ' dự án active)'">
+          <span
+            class="em-chip em-chip-warn em-chip-clickable"
+            *ngIf="overloadedCount > 0"
+            [class.active]="showOnlyOverloaded"
+            [title]="overloadedCount + ' nhân viên overload (>' + WORKLOAD_THRESHOLD + ' active). Click để lọc.'"
+            (click)="showOnlyOverloaded = !showOnlyOverloaded; page = 0">
             <mat-icon>warning</mat-icon>{{ overloadedCount }} overload
+          </span>
+          <span class="em-chip em-chip-clear" *ngIf="hasActiveFilters" (click)="clearFilters()" title="Xóa tất cả bộ lọc">
+            <mat-icon>filter_alt_off</mat-icon> Xóa lọc
           </span>
         </div>
       </div>
@@ -374,7 +393,7 @@
                 </div>
                 <div class="em-form-field">
                   <label>Ngày vào làm</label>
-                  <input type="text" [(ngModel)]="form.joinDate" name="joinDate" placeholder="DD/MM/YYYY" />
+                  <app-date-input [(ngModel)]="form.joinDate" name="joinDate" placeholder="Ngày vào làm"></app-date-input>
                 </div>
               </div>
             </div>

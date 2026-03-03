@@ -299,6 +299,30 @@
   mat-icon { color: #f57c00; font-size: 14px; width: 14px; height: 14px; }
 }
 
+// Clickable chip (overload toggle)
+.em-chip-clickable {
+  cursor: pointer;
+  user-select: none;
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.15s;
+
+  &:hover { filter: brightness(0.9); transform: scale(1.04); }
+
+  &.active {
+    box-shadow: 0 0 0 2px #e65100;
+    background: #ffe0b2;
+  }
+}
+
+// Clear filters chip
+.em-chip-clear {
+  background: #fce4ec;
+  color: #c62828;
+  cursor: pointer;
+  transition: filter 0.15s;
+  &:hover { filter: brightness(0.92); }
+  mat-icon { color: #c62828; }
+}
+
 // ── F9: Workload badge in projects column ────────────────────────
 .em-workload-badge {
   display: inline-flex;
@@ -996,6 +1020,9 @@
   }
 
   .em-chip { background: #1e1b4b; color: #818cf8; }
+
+  .em-chip-clear { background: #3b1a26; color: #f48fb1; mat-icon { color: #f48fb1; } }
+  .em-chip-clickable.active { background: #451a03; box-shadow: 0 0 0 2px #fb923c; }
 
   .em-table-wrap { scrollbar-color: #334155 #0f172a; }
 

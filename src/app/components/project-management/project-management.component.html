@@ -7,7 +7,25 @@
         <h2><mat-icon>folder_special</mat-icon> Quản lý Dự án</h2>
       </div>
       <div class="psh-actions-row">
-        <span class="proj-count">{{ projects.length }} dự án</span>
+        <span class="proj-count">
+          {{ filteredProjects.length }}<ng-container *ngIf="filteredProjects.length !== projects.length"> / {{ projects.length }}</ng-container> dự án
+        </span>
+        <div class="pm-sort-controls">
+          <button class="pm-sort-btn"
+            [class.active]="sortProjectBy === 'name'"
+            title="Sắp xếp theo tên"
+            (click)="setSort('name')">
+            <mat-icon>sort_by_alpha</mat-icon>
+            <mat-icon class="sort-dir-icon" *ngIf="sortProjectBy === 'name'">{{ sortProjectDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+          </button>
+          <button class="pm-sort-btn"
+            [class.active]="sortProjectBy === 'memberCount'"
+            title="Sắp xếp theo số thành viên"
+            (click)="setSort('memberCount')">
+            <mat-icon>people</mat-icon>
+            <mat-icon class="sort-dir-icon" *ngIf="sortProjectBy === 'memberCount'">{{ sortProjectDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+          </button>
+        </div>
         <button class="pm-btn pm-btn-primary pm-btn-sm" (click)="openCreateProject($event)" *ngIf="isAdmin">
           <mat-icon>add</mat-icon> Tạo dự án
         </button>
@@ -57,6 +75,10 @@
         <div class="ppc-meta">
           <mat-icon>people</mat-icon>
           <span>{{ proj.memberCount }} thành viên</span>
+        </div>
+        <div class="ppc-meta ppc-deadline" *ngIf="proj.endDate">
+          <mat-icon>event</mat-icon>
+          <span [class.deadline-over]="isDeadlineOver(proj.endDate)">{{ proj.endDate | formatDate }}</span>
         </div>
         <div class="ppc-actions" *ngIf="isAdmin">
           <button class="ppc-action-btn" title="Sửa tên dự án" (click)="openEditProject(proj, $event)">
@@ -707,6 +729,11 @@
               searchPlaceholder="Tìm tên, chức vụ...">
             </app-searchable-select>
             <span class="pm-field-error" *ngIf="formErrors['employeeId']">{{ formErrors['employeeId'] }}</span>
+          </div>
+
+          <div class="pm-overload-warn" *ngIf="panelMode === 'add-member' && selectedMemberIsOverloaded">
+            <mat-icon>warning</mat-icon>
+            <span>Nhân viên đang tham gia <strong>{{ selectedMemberActiveCount }} dự án active</strong> — có thể bị overload!</span>
           </div>
 
           <div class="pm-form-field" *ngIf="panelMode === 'edit-member'">

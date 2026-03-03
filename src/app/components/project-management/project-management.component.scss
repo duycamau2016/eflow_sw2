@@ -84,6 +84,34 @@
     gap: 8px;
   }
 
+  .pm-sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .pm-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    background: transparent;
+    color: #90a4ae;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.15s;
+
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    .sort-dir-icon { font-size: 11px; width: 11px; height: 11px; }
+
+    &:hover { background: #f5f5f5; color: #4f46e5; border-color: #c5cae9; }
+    &.active { background: #eef2ff; color: #4f46e5; border-color: #c5cae9; font-weight: 700; }
+  }
+
   .proj-count {
     font-size: 11px;
     background: #e8eaf6;
@@ -218,6 +246,27 @@
       height: 13px;
     }
   }
+
+  .ppc-deadline {
+    .deadline-over { color: #e53935; font-weight: 700; }
+  }
+}
+
+// Overload warning banner in add-member form
+.pm-overload-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #e65100;
+  margin-top: -4px;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; color: #f57c00; flex-shrink: 0; margin-top: 1px; }
+  strong { color: #bf360c; }
 }
 
 .pm-empty-list {
@@ -924,6 +973,22 @@
     &.selected { background: #1e1b4b; border-color: #818cf8; }
     .ppc-name { color: #e2e8f0; }
     .ppc-meta { color: #64748b; }
+    .ppc-deadline .deadline-over { color: #f87171; }
+  }
+
+  .pm-sort-btn {
+    border-color: #334155;
+    color: #475569;
+    &:hover { background: #1e1b4b; color: #818cf8; border-color: #4f46e5; }
+    &.active { background: #1e1b4b; color: #818cf8; border-color: #4f46e5; }
+  }
+
+  .pm-overload-warn {
+    background: #451a03;
+    border-color: #78350f;
+    color: #fdba74;
+    strong { color: #fb923c; }
+    mat-icon { color: #f97316; }
   }
 
   .ppc-status, .ptn-status, .pdh-badge {

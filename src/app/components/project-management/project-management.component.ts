@@ -10,6 +10,7 @@ export interface ProjectInfo {
   status: 'active' | 'completed' | 'pending';
   memberCount: number;
   members: ProjectMember[];
+  endDate?: string;   // Ngày kết thúc tổng hợp (max endDate của các thành viên)
 }
 
 export interface ProjectMember {
@@ -42,9 +43,11 @@ export class ProjectManagementComponent implements OnChanges {
   projectTree: ProjectMember[] = [];
 
   // ── Tìm kiếm / lọc ───────────────────────────────────────────────────────
-  searchQuery  = '';
-  memberSearch = '';
-  statusFilter = 'all';
+  searchQuery     = '';
+  memberSearch    = '';
+  statusFilter    = 'all';
+  sortProjectBy: 'name' | 'memberCount' = 'name';
+  sortProjectDir: 'asc' | 'desc' = 'asc';
 
   // ── Chế độ xem ───────────────────────────────────────────────────────────
   viewMode: 'tree' | 'table' = 'tree';
@@ -145,10 +148,23 @@ export class ProjectManagementComponent implements OnChanges {
   }
 
   get availableEmployeeOptions() {
-    return this.availableEmployees.map(e => ({
-      value: e.id,
-      label: `${e.name} – ${e.position ?? ''}`
-    }));
+    return this.availableEmployees.map(e => {
+      const active   = (e.projects ?? []).filter(p => p.status === 'active').length;
+      const overLabel = active > 3 ? ` ⚠️ ${active} active` : active > 0 ? ` (${active} active)` : '';
+      return { value: e.id, label: `${e.name} – ${e.position ?? ''}${overLabel}` };
+    });
+  }
+
+  get selectedMemberIsOverloaded(): boolean {
+    if (!this.memberForm.employeeId) return false;
+    const emp = this.allEmployees.find(e => e.id === this.memberForm.employeeId);
+    return emp ? (emp.projects ?? []).filter(p => p.status === 'active').length > 3 : false;
+  }
+
+  get selectedMemberActiveCount(): number {
+    if (!this.memberForm.employeeId) return 0;
+    const emp = this.allEmployees.find(e => e.id === this.memberForm.employeeId);
+    return emp ? (emp.projects ?? []).filter(p => p.status === 'active').length : 0;
   }
 
   get totalTablePages(): number {
@@ -337,11 +353,28 @@ export class ProjectManagementComponent implements OnChanges {
 
   applyProjectFilter(): void {
     const q = this.searchQuery.toLowerCase();
-    this.filteredProjects = this.projects.filter(p => {
+    const filtered = this.projects.filter(p => {
       const matchSearch = !q || p.name.toLowerCase().includes(q);
       const matchStatus = this.statusFilter === 'all' || p.status === this.statusFilter;
       return matchSearch && matchStatus;
     });
+    filtered.sort((a, b) => {
+      const cmp = this.sortProjectBy === 'memberCount'
+        ? a.memberCount - b.memberCount
+        : a.name.localeCompare(b.name, 'vi');
+      return this.sortProjectDir === 'asc' ? cmp : -cmp;
+    });
+    this.filteredProjects = filtered;
+  }
+
+  setSort(col: 'name' | 'memberCount'): void {
+    if (this.sortProjectBy === col) {
+      this.sortProjectDir = this.sortProjectDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortProjectBy  = col;
+      this.sortProjectDir = 'asc';
+    }
+    this.applyProjectFilter();
   }
 
   selectProject(proj: ProjectInfo | null): void {
@@ -694,6 +727,21 @@ export class ProjectManagementComponent implements OnChanges {
 
   getStatusClass(status: string): string {
     return `status-${status}`;
+  }
+
+  parseDateStr(val: string): Date | null {
+    if (!val) return null;
+    const dmy = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dmy) return new Date(+dmy[3], +dmy[2] - 1, +dmy[1]);
+    const ymd = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (ymd) return new Date(+ymd[1], +ymd[2] - 1, +ymd[3]);
+    return null;
+  }
+
+  isDeadlineOver(dateStr?: string): boolean {
+    if (!dateStr) return false;
+    const d = this.parseDateStr(dateStr);
+    return d ? d < new Date() : false;
   }
 
   getAvatarColor(name: string): string {

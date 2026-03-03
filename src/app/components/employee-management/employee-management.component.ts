@@ -41,12 +41,14 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
   checklistMap: Record<string, ChecklistItem[]> = {};
 
   // ─── List state ─────────────────────────────────────────────
-  searchQuery  = '';
-  deptFilter   = 'all';
-  sortCol      = 'name';
+  searchQuery        = '';
+  deptFilter         = 'all';
+  levelFilter        = 'all';
+  showOnlyOverloaded = false;
+  sortCol            = 'name';
   sortDir: 'asc' | 'desc' = 'asc';
-  page         = 0;
-  readonly pageSize = 10;
+  page               = 0;
+  readonly pageSize  = 10;
 
   // ─── Panel state ─────────────────────────────────────────────
   panelMode: PanelMode = 'closed';
@@ -105,6 +107,16 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     { value: 'completed', label: 'Hoàn thành'       }
   ];
 
+  readonly levelSelectOptions = [
+    { value: 'all', label: 'Tất cả cấp bậc' },
+    { value: '0',   label: 'Cấp 1' },
+    { value: '1',   label: 'Cấp 2' },
+    { value: '2',   label: 'Cấp 3' },
+    { value: '3',   label: 'Cấp 4' },
+    { value: '4',   label: 'Cấp 5' },
+    { value: '5',   label: 'Cấp 6' },
+  ];
+
   get filteredEmployees(): Employee[] {
     const q = this.searchQuery.toLowerCase();
     return this.allEmployees
@@ -115,8 +127,10 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
           e.department?.toLowerCase().includes(q) ||
           e.email?.toLowerCase().includes(q) ||
           e.id?.toLowerCase().includes(q);
-        const matchDept = this.deptFilter === 'all' || e.department === this.deptFilter;
-        return matchSearch && matchDept;
+        const matchDept     = this.deptFilter === 'all' || e.department === this.deptFilter;
+        const matchLevel    = this.levelFilter === 'all' || e.level === +this.levelFilter;
+        const matchOverload = !this.showOnlyOverloaded || this.getActiveProjectCount(e) > this.WORKLOAD_THRESHOLD;
+        return matchSearch && matchDept && matchLevel && matchOverload;
       })
       .sort((a, b) => {
         let va: any, vb: any;
@@ -255,6 +269,18 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
 
   onSearch(): void { this.page = 0; }
 
+  get hasActiveFilters(): boolean {
+    return this.searchQuery !== '' || this.deptFilter !== 'all' || this.levelFilter !== 'all' || this.showOnlyOverloaded;
+  }
+
+  clearFilters(): void {
+    this.searchQuery        = '';
+    this.deptFilter         = 'all';
+    this.levelFilter        = 'all';
+    this.showOnlyOverloaded = false;
+    this.page               = 0;
+  }
+
   goTo(p: number): void {
     if (p >= 0 && p < this.totalPages) this.page = p;
   }
@@ -317,6 +343,12 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     }
     if (this.form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email))
       this.formErrors['email'] = 'Email không hợp lệ';
+    if (this.form.email?.trim() && !this.formErrors['email']) {
+      const dup = this.allEmployees.find(e =>
+        e.email?.toLowerCase() === this.form.email!.trim().toLowerCase() && e.id !== this.form.id
+      );
+      if (dup) this.formErrors['email'] = `Email đã được dùng bởi ${dup.name}`;
+    }
     return Object.keys(this.formErrors).length === 0;
   }
 
