@@ -771,6 +771,22 @@
   flex: 1;
 }
 
+.em-proj-name-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #4f46e5;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.4;
+  &:hover { text-decoration: underline; }
+  .em-proj-goto-icon { font-size: 13px; width: 13px; height: 13px; opacity: 0.7; }
+}
+
 .em-proj-status {
   font-size: 10px;
   font-weight: 700;
@@ -1100,6 +1116,7 @@
 
   .em-proj-item { background: #0f172a; border-color: #334155; }
   .em-proj-name { color: #f1f5f9; }
+  .em-proj-name-link { color: #818cf8; }
   .em-proj-role { color: #64748b; }
   .em-proj-dates { color: #475569; }
   .em-proj-status {

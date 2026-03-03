@@ -250,6 +250,36 @@
   .ppc-deadline {
     .deadline-over { color: #e53935; font-weight: 700; }
   }
+
+  .ppc-progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+
+    .ppc-progress-bar {
+      flex: 1;
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 2px;
+      overflow: hidden;
+
+      .ppc-progress-fill {
+        height: 100%;
+        background: #4f46e5;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+      }
+    }
+
+    .ppc-progress-label {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 600;
+      min-width: 26px;
+      text-align: right;
+    }
+  }
 }
 
 // Overload warning banner in add-member form
@@ -386,6 +416,14 @@
       font-size: 16px;
       font-weight: 700;
       color: #1e293b;
+    }
+
+    .pm-proj-desc {
+      margin: 0 0 4px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.45;
+      max-width: 480px;
     }
 
     .pdh-status-wrap {
@@ -1024,6 +1062,11 @@
     .ppc-name { color: #e2e8f0; }
     .ppc-meta { color: #64748b; }
     .ppc-deadline .deadline-over { color: #f87171; }
+    .ppc-progress {
+      .ppc-progress-bar { background: #334155; }
+      .ppc-progress-fill { background: #818cf8; }
+      .ppc-progress-label { color: #94a3b8; }
+    }
   }
 
   .pm-sort-btn {
@@ -1059,6 +1102,7 @@
     background: #1e293b;
     border-bottom-color: #334155;
     .pdh-title h2 { color: #f1f5f9; }
+    .pm-proj-desc { color: #94a3b8; }
     .pdh-stat { color: #94a3b8; }
   }
 

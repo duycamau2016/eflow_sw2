@@ -24,6 +24,7 @@ export class AppComponent {
   isSampleLoading = false;
   isDarkTheme = true;
   isMobileNavOpen = false;
+  projectToSelect: string | null = null;
 
   stats = { total: 0, departments: 0, projects: 0, levels: 0 };
 
@@ -77,6 +78,13 @@ export class AppComponent {
 
   toggleMobileNav(): void {
     this.isMobileNavOpen = !this.isMobileNavOpen;
+  }
+
+  onNavigateToProject(projectName: string): void {
+    this.projectToSelect = projectName;
+    this.activeMenu = 'projects';
+    this.isMobileNavOpen = false;
+    if (!this.hasData) this.loadSampleData();
   }
 
   closeMobileNav(): void {

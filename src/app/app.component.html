@@ -266,6 +266,7 @@
         <app-project-management
           [allEmployees]="allEmployees"
           [isAdmin]="isAdmin"
+          [autoSelectProject]="projectToSelect"
         ></app-project-management>
       </div>
 
@@ -274,6 +275,7 @@
         <app-employee-management
           [allEmployees]="allEmployees"
           [isAdmin]="isAdmin"
+          (navigateToProject)="onNavigateToProject($event)"
         ></app-employee-management>
       </div>
 

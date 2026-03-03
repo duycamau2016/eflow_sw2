@@ -80,6 +80,12 @@
           <mat-icon>event</mat-icon>
           <span [class.deadline-over]="isDeadlineOver(proj.endDate)">{{ proj.endDate | formatDate }}</span>
         </div>
+        <div class="ppc-progress" *ngIf="getProjectProgress(proj.name) !== null">
+          <div class="ppc-progress-bar">
+            <div class="ppc-progress-fill" [style.width.%]="getProjectProgress(proj.name)"></div>
+          </div>
+          <span class="ppc-progress-label">{{ getProjectProgress(proj.name) }}%</span>
+        </div>
         <div class="ppc-actions" *ngIf="isAdmin">
           <button class="ppc-action-btn" title="Sửa tên dự án" (click)="openEditProject(proj, $event)">
             <mat-icon>edit</mat-icon>
@@ -121,6 +127,7 @@
         <mat-icon class="pdh-icon">work</mat-icon>
         <div>
           <h2>{{ selectedProject.name }}</h2>
+          <p class="pm-proj-desc" *ngIf="getProjectDescription(selectedProject.name)">{{ getProjectDescription(selectedProject.name) }}</p>
           <div class="pdh-status-wrap">
             <span class="pdh-badge" [class]="getStatusClass(selectedProject.status)"
               [class.pm-status-clickable]="isAdmin"
@@ -751,6 +758,11 @@
               placeholder="-- Chọn trạng thái --">
             </app-searchable-select>
             <span class="pm-field-error" *ngIf="formErrors['status']">{{ formErrors['status'] }}</span>
+          </div>
+          <div class="pm-form-field">
+            <label>Mô tả dự án</label>
+            <textarea [(ngModel)]="projectForm.description" rows="3"
+              placeholder="Nhập mô tả ngắn về dự án (tùy chọn)..."></textarea>
           </div>
         </ng-container>
 

@@ -281,7 +281,9 @@
             <div class="em-proj-list" *ngIf="emp?.projects?.length">
               <div class="em-proj-item" *ngFor="let p of emp.projects">
                 <div class="em-proj-top">
-                  <span class="em-proj-name">{{ p.name }}</span>
+                  <button class="em-proj-name em-proj-name-link" (click)="goToProject(p.name)" title="Xem dự án {{ p.name }}">
+                    {{ p.name }}<mat-icon class="em-proj-goto-icon">open_in_new</mat-icon>
+                  </button>
                   <span class="em-proj-status" [class]="getStatusClass(p.status)">{{ statusLabel[p.status] }}</span>
                 </div>
                 <div class="em-proj-sub">

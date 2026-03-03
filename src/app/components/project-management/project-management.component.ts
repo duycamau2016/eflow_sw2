@@ -34,6 +34,7 @@ type PanelMode = 'closed' | 'create-project' | 'edit-project' | 'add-member' | '
 export class ProjectManagementComponent implements OnChanges {
   @Input() allEmployees: Employee[] = [];
   @Input() isAdmin = false;
+  @Input() autoSelectProject: string | null = null;
   @ViewChild('treeWrapper') treeWrapperRef!: ElementRef<HTMLElement>;
 
   // ── Dữ liệu hiển thị ─────────────────────────────────────────────────────
@@ -63,13 +64,18 @@ export class ProjectManagementComponent implements OnChanges {
 
   // ── Panel CRUD ────────────────────────────────────────────────────────────
   panelMode: PanelMode = 'closed';
-  projectForm = { name: '', status: 'active' };
+  projectForm = { name: '', status: 'active', description: '' };
   memberForm  = { employeeId: '', role: '', startDate: '', endDate: '' };
   editingAssignmentId: string | null = null;
   editingMemberEmployee: Employee | null = null;
   // Used in template – not private
   _pendingProjectName = '';
+  _pendingProjectDescription = '';
   _autoSelectProjectName: string | null = null;
+
+  // ── Meta dự án (localStorage: mô tả + tiến độ) ───────────────────────────
+  private readonly PROJ_META_KEY = 'eflow_proj_meta';
+  private projectMeta: Record<string, { description?: string; progress?: number }> = {};
 
   // ── Xác nhận xoá ─────────────────────────────────────────────────────────
   deleteProjectConfirm               = false;
@@ -144,7 +150,12 @@ export class ProjectManagementComponent implements OnChanges {
   constructor(
     private eflowApi: EFlowApiService,
     private excelService: ExcelImportService
-  ) {}
+  ) {
+    try {
+      const raw = localStorage.getItem(this.PROJ_META_KEY);
+      this.projectMeta = raw ? JSON.parse(raw) : {};
+    } catch { this.projectMeta = {}; }
+  }
 
   get availableEmployees(): Employee[] {
     const memberIds = new Set((this.selectedProject?.members ?? []).map(m => m.employee.id));
@@ -292,6 +303,9 @@ export class ProjectManagementComponent implements OnChanges {
   };
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['autoSelectProject'] && this.autoSelectProject) {
+      this._autoSelectProjectName = this.autoSelectProject;
+    }
     if (changes['allEmployees']) {
       this.buildProjects();
     }
@@ -553,7 +567,11 @@ export class ProjectManagementComponent implements OnChanges {
   private loadPhases(projectName: string): void {
     this.isLoadingPhases = true;
     this.eflowApi.getPhases(projectName).subscribe({
-      next: (list) => { this.phases = list; this.isLoadingPhases = false; },
+      next: (list) => {
+        this.phases = list;
+        this.isLoadingPhases = false;
+        this._cachePhaseProgress(projectName, list);
+      },
       error: () => { this.phases = []; this.isLoadingPhases = false; }
     });
   }
@@ -587,7 +605,9 @@ export class ProjectManagementComponent implements OnChanges {
         this.isSavingPhase    = false;
         this.phaseFormVisible = false;
         const name = this.selectedProject?.name;
-        if (name) this.eflowApi.getPhases(name).subscribe({ next: (l) => { this.phases = l; } });
+        if (name) this.eflowApi.getPhases(name).subscribe({
+          next: (l) => { this.phases = l; this._cachePhaseProgress(name, l); }
+        });
       },
       error: (err: any) => { this.isSavingPhase = false; console.error('[eFlow] savePhase', err); }
     });
@@ -601,7 +621,9 @@ export class ProjectManagementComponent implements OnChanges {
       next: () => {
         this.deletingPhaseId = null;
         const name = this.selectedProject?.name;
-        if (name) this.eflowApi.getPhases(name).subscribe({ next: (l) => { this.phases = l; } });
+        if (name) this.eflowApi.getPhases(name).subscribe({
+          next: (l) => { this.phases = l; this._cachePhaseProgress(name, l); }
+        });
       },
       error: () => { this.deletingPhaseId = null; }
     });
@@ -829,7 +851,7 @@ export class ProjectManagementComponent implements OnChanges {
 
   openCreateProject(event?: Event): void {
     event?.stopPropagation();
-    this.projectForm = { name: '', status: 'active' };
+    this.projectForm = { name: '', status: 'active', description: '' };
     this.formErrors  = {};
     this.deleteProjectConfirm = false;
     this.deleteMemberConfirm  = null;
@@ -839,7 +861,11 @@ export class ProjectManagementComponent implements OnChanges {
   openEditProject(proj: ProjectInfo, event?: Event): void {
     event?.stopPropagation();
     this.selectProject(proj);
-    this.projectForm = { name: proj.name, status: proj.status };
+    this.projectForm = {
+      name: proj.name,
+      status: proj.status,
+      description: this.projectMeta[proj.name]?.description ?? ''
+    };
     this.formErrors  = {};
     this.panelMode = 'edit-project';
   }
@@ -854,7 +880,8 @@ export class ProjectManagementComponent implements OnChanges {
         this.formErrors['name'] = 'Tên dự án đã tồn tại';
         return;
       }
-      this._pendingProjectName = name;
+      this._pendingProjectName        = name;
+      this._pendingProjectDescription = this.projectForm.description.trim();
       this.memberForm = { employeeId: '', role: '', startDate: '', endDate: '' };
       this.editingAssignmentId    = null;
       this.editingMemberEmployee  = null;
@@ -867,6 +894,18 @@ export class ProjectManagementComponent implements OnChanges {
     const oldStatus = this.selectedProject.status;
     const nameChanged   = name !== oldName;
     const statusChanged = this.projectForm.status !== oldStatus;
+
+    // Save description locally (localStorage) regardless of API
+    const desc = this.projectForm.description.trim();
+    if (!this.projectMeta[name]) this.projectMeta[name] = {};
+    this.projectMeta[name].description = desc;
+    // Migrate key if name is changing
+    if (nameChanged && this.projectMeta[oldName]) {
+      this.projectMeta[name] = { ...this.projectMeta[oldName], description: desc };
+      delete this.projectMeta[oldName];
+    }
+    try { localStorage.setItem(this.PROJ_META_KEY, JSON.stringify(this.projectMeta)); } catch {}
+
     if (!nameChanged && !statusChanged) { this.closePanel(); return; }
 
     this.isSaving = true;
@@ -975,7 +1014,15 @@ export class ProjectManagementComponent implements OnChanges {
       next: () => {
         this.isSaving = false;
         this.closePanel();
-        if (autoSelect) this._autoSelectProjectName = autoSelect;
+        if (autoSelect) {
+          this._autoSelectProjectName = autoSelect;
+          if (this._pendingProjectDescription) {
+            if (!this.projectMeta[autoSelect]) this.projectMeta[autoSelect] = {};
+            this.projectMeta[autoSelect].description = this._pendingProjectDescription;
+            try { localStorage.setItem(this.PROJ_META_KEY, JSON.stringify(this.projectMeta)); } catch {}
+            this._pendingProjectDescription = '';
+          }
+        }
         this.refreshData();
       },
       error: (err: any) => {
@@ -1007,6 +1054,23 @@ export class ProjectManagementComponent implements OnChanges {
     this.editingAssignmentId   = null;
     this.editingMemberEmployee = null;
     this._pendingProjectName   = '';
+  }
+
+  getProjectDescription(name: string): string {
+    return this.projectMeta[name]?.description ?? '';
+  }
+
+  getProjectProgress(name: string): number | null {
+    const v = this.projectMeta[name]?.progress;
+    return v != null ? v : null;
+  }
+
+  private _cachePhaseProgress(projectName: string, phases: ProjectPhaseApiDTO[]): void {
+    if (!phases.length) return;
+    const avg = phases.reduce((s, p) => s + (p.progress ?? 0), 0) / phases.length;
+    if (!this.projectMeta[projectName]) this.projectMeta[projectName] = {};
+    this.projectMeta[projectName].progress = Math.round(avg);
+    try { localStorage.setItem(this.PROJ_META_KEY, JSON.stringify(this.projectMeta)); } catch {}
   }
 
   private refreshData(): void {

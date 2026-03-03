@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { Employee, Project } from '../../models/employee.model';
 import { ExcelImportService } from '../../services/excel-import.service';
 
@@ -19,6 +19,7 @@ export interface ChecklistItem {
 export class EmployeeManagementComponent implements OnChanges, OnInit {
   @Input() allEmployees: Employee[] = [];
   @Input() isAdmin = false;
+  @Output() navigateToProject = new EventEmitter<string>();
 
   // ─── Workload ────────────────────────────────────────────────
   readonly WORKLOAD_THRESHOLD = 3;
@@ -361,6 +362,12 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     this.panelMode = 'closed';
     this.deleteConfirmId = null;
     this.showAddProject = false;
+  }
+
+  /** Điến hướng sang màn Dự án và auto-select đúng dự án */
+  goToProject(projectName: string): void {
+    this.closePanel();
+    this.navigateToProject.emit(projectName);
   }
 
   // ─── Validation + Save ──────────────────────────────────────
