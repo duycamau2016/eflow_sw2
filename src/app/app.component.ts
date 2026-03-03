@@ -130,7 +130,6 @@ export class AppComponent {
     // Use timeout so click events on dropdown items fire first
     setTimeout(() => { this.globalSearchOpen = false; }, 150);
   }
-  }
 
   closeMobileNav(): void {
     this.isMobileNavOpen = false;
