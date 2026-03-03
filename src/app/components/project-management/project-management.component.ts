@@ -45,9 +45,13 @@ export class ProjectManagementComponent implements OnChanges {
   // ── Tìm kiếm / lọc ───────────────────────────────────────────────────────
   searchQuery     = '';
   memberSearch    = '';
+  memberDeptFilter = 'all';
+  memberSortCol: string = 'name';
+  memberSortDir: 'asc' | 'desc' = 'asc';
   statusFilter    = 'all';
   sortProjectBy: 'name' | 'memberCount' = 'name';
   sortProjectDir: 'asc' | 'desc' = 'asc';
+  statusPopoverOpen = false;
 
   // ── Chế độ xem ───────────────────────────────────────────────────────────
   viewMode: 'tree' | 'table' = 'tree';
@@ -380,6 +384,10 @@ export class ProjectManagementComponent implements OnChanges {
   selectProject(proj: ProjectInfo | null): void {
     this.selectedProject      = proj;
     this.memberSearch         = '';
+    this.memberDeptFilter     = 'all';
+    this.memberSortCol        = 'name';
+    this.memberSortDir        = 'asc';
+    this.statusPopoverOpen    = false;
     this.tablePage            = 0;
     this.viewMode             = 'tree';
     this.panelMode            = 'closed';
@@ -707,18 +715,66 @@ export class ProjectManagementComponent implements OnChanges {
 
   get flatFilteredMembers(): ProjectMember[] {
     const all = this.selectedProject?.members ?? [];
-    if (!this.memberSearch) return all;
     const q = this.memberSearch.toLowerCase();
-    return all.filter(m =>
-      m.employee.name.toLowerCase().includes(q) ||
-      m.employee.position?.toLowerCase().includes(q) ||
-      m.employee.department?.toLowerCase().includes(q) ||
-      m.role?.toLowerCase().includes(q)
-    );
+    return all
+      .filter(m => {
+        const matchSearch = !q ||
+          m.employee.name.toLowerCase().includes(q) ||
+          m.employee.position?.toLowerCase().includes(q) ||
+          m.employee.department?.toLowerCase().includes(q) ||
+          m.role?.toLowerCase().includes(q);
+        const matchDept = this.memberDeptFilter === 'all' || m.employee.department === this.memberDeptFilter;
+        return matchSearch && matchDept;
+      })
+      .sort((a, b) => {
+        let va: any, vb: any;
+        switch (this.memberSortCol) {
+          case 'name':      va = a.employee.name;       vb = b.employee.name;       break;
+          case 'position':  va = a.employee.position;   vb = b.employee.position;   break;
+          case 'dept':      va = a.employee.department; vb = b.employee.department; break;
+          case 'role':      va = a.role;                vb = b.role;                break;
+          case 'startDate': va = a.startDate ?? '';     vb = b.startDate ?? '';     break;
+          case 'endDate':   va = a.endDate ?? '';       vb = b.endDate ?? '';       break;
+          default:          va = a.employee.name;       vb = b.employee.name;
+        }
+        const cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'vi');
+        return this.memberSortDir === 'asc' ? cmp : -cmp;
+      });
   }
 
   onMemberSearchChange(): void {
     this.tablePage = 0;
+  }
+
+  get memberDeptOptions(): { value: string; label: string }[] {
+    const depts = new Set(
+      (this.selectedProject?.members ?? [])
+        .map(m => m.employee.department)
+        .filter((d): d is string => !!d)
+    );
+    const sorted = Array.from(depts).sort((a, b) => a.localeCompare(b, 'vi'));
+    return [
+      { value: 'all', label: 'Tất cả phòng ban' },
+      ...sorted.map(d => ({ value: d, label: d }))
+    ];
+  }
+
+  sortMember(col: string): void {
+    if (this.memberSortCol === col) this.memberSortDir = this.memberSortDir === 'asc' ? 'desc' : 'asc';
+    else { this.memberSortCol = col; this.memberSortDir = 'asc'; }
+    this.tablePage = 0;
+  }
+
+  quickChangeStatus(status: string): void {
+    if (!this.selectedProject || this.selectedProject.status === status) {
+      this.statusPopoverOpen = false;
+      return;
+    }
+    this.statusPopoverOpen = false;
+    this.eflowApi.updateProjectStatus(this.selectedProject.name, status).subscribe({
+      next: () => this.refreshData(),
+      error: (err: any) => console.error('[eFlow] quickChangeStatus failed', err)
+    });
   }
 
   countAllMembers(nodes: ProjectMember[]): number {

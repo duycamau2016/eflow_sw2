@@ -121,9 +121,23 @@
         <mat-icon class="pdh-icon">work</mat-icon>
         <div>
           <h2>{{ selectedProject.name }}</h2>
-          <span class="pdh-badge" [class]="getStatusClass(selectedProject.status)">
-            {{ statusLabel[selectedProject.status] }}
-          </span>
+          <div class="pdh-status-wrap">
+            <span class="pdh-badge" [class]="getStatusClass(selectedProject.status)"
+              [class.pm-status-clickable]="isAdmin"
+              (click)="isAdmin && (statusPopoverOpen = !statusPopoverOpen)"
+              [title]="isAdmin ? 'Click để đổi trạng thái' : ''">
+              {{ statusLabel[selectedProject.status] }}
+              <mat-icon *ngIf="isAdmin" class="pdh-badge-arrow">arrow_drop_down</mat-icon>
+            </span>
+            <div class="pm-status-popover" *ngIf="statusPopoverOpen && isAdmin">
+              <button *ngFor="let s of statusOptions"
+                class="pm-status-option"
+                [class.current]="selectedProject.status === s.val"
+                (click)="quickChangeStatus(s.val)">
+                {{ s.label }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="pdh-stats">
@@ -177,7 +191,17 @@
         [(ngModel)]="memberSearch"
         (input)="onMemberSearchChange()"
       />
-      <mat-icon *ngIf="memberSearch" class="clear-icon" (click)="memberSearch=''">close</mat-icon>
+      <mat-icon *ngIf="memberSearch" class="clear-icon" (click)="memberSearch=''; onMemberSearchChange()">close</mat-icon>
+
+      <!-- Dept filter (show only when project has members from multiple depts) -->
+      <div class="pms-dept-filter" *ngIf="memberDeptOptions.length > 2">
+        <app-searchable-select
+          [options]="memberDeptOptions"
+          [value]="memberDeptFilter"
+          (valueChange)="memberDeptFilter = $event; tablePage = 0"
+          placeholder="Tất cả phòng">
+        </app-searchable-select>
+      </div>
 
       <!-- View toggle -->
       <div class="pm-view-toggle">
@@ -245,12 +269,30 @@
         <thead>
           <tr>
             <th class="col-idx">#</th>
-            <th class="col-name">Họ và tên</th>
-            <th class="col-position">Chức vụ</th>
-            <th class="col-dept">Phòng ban</th>
-            <th class="col-role">Vai trò dự án</th>
-            <th class="col-start">Ngày bắt đầu</th>
-            <th class="col-end">Ngày kết thúc</th>
+            <th class="col-name sortable" (click)="sortMember('name')">
+              Họ và tên
+              <mat-icon *ngIf="memberSortCol === 'name'">{{ memberSortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-position sortable" (click)="sortMember('position')">
+              Chức vụ
+              <mat-icon *ngIf="memberSortCol === 'position'">{{ memberSortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-dept sortable" (click)="sortMember('dept')">
+              Phòng ban
+              <mat-icon *ngIf="memberSortCol === 'dept'">{{ memberSortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-role sortable" (click)="sortMember('role')">
+              Vai trò dự án
+              <mat-icon *ngIf="memberSortCol === 'role'">{{ memberSortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-start sortable" (click)="sortMember('startDate')">
+              Ngày bắt đầu
+              <mat-icon *ngIf="memberSortCol === 'startDate'">{{ memberSortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
+            <th class="col-end sortable" (click)="sortMember('endDate')">
+              Ngày kết thúc
+              <mat-icon *ngIf="memberSortCol === 'endDate'">{{ memberSortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </th>
             <th class="col-actions">Thao tác</th>
           </tr>
         </thead>

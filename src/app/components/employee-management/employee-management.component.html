@@ -58,6 +58,14 @@
             (click)="showOnlyOverloaded = !showOnlyOverloaded; page = 0">
             <mat-icon>warning</mat-icon>{{ overloadedCount }} overload
           </span>
+          <span
+            class="em-chip em-chip-bench em-chip-clickable"
+            *ngIf="benchCount > 0"
+            [class.active]="showOnlyBench"
+            title="NV chưa có dự án active (bench). Click để lọc."
+            (click)="showOnlyBench = !showOnlyBench; page = 0">
+            <mat-icon>person_off</mat-icon>{{ benchCount }} bench
+          </span>
           <span class="em-chip em-chip-clear" *ngIf="hasActiveFilters" (click)="clearFilters()" title="Xóa tất cả bộ lọc">
             <mat-icon>filter_alt_off</mat-icon> Xóa lọc
           </span>
@@ -254,7 +262,7 @@
             </div>
             <div class="em-view-item">
               <label><mat-icon>calendar_today</mat-icon>Ngày vào làm</label>
-              <span>{{ emp.joinDate || '—' }}</span>
+              <span>{{ emp.joinDate || '—' }}<span class="em-tenure" *ngIf="emp.joinDate"> · {{ getTenure(emp.joinDate) }}</span></span>
             </div>
             <div class="em-view-item">
               <label><mat-icon>email</mat-icon>Email</label>

@@ -45,6 +45,7 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
   deptFilter         = 'all';
   levelFilter        = 'all';
   showOnlyOverloaded = false;
+  showOnlyBench      = false;
   sortCol            = 'name';
   sortDir: 'asc' | 'desc' = 'asc';
   page               = 0;
@@ -130,7 +131,8 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
         const matchDept     = this.deptFilter === 'all' || e.department === this.deptFilter;
         const matchLevel    = this.levelFilter === 'all' || e.level === +this.levelFilter;
         const matchOverload = !this.showOnlyOverloaded || this.getActiveProjectCount(e) > this.WORKLOAD_THRESHOLD;
-        return matchSearch && matchDept && matchLevel && matchOverload;
+        const matchBench    = !this.showOnlyBench    || this.getActiveProjectCount(e) === 0;
+        return matchSearch && matchDept && matchLevel && matchOverload && matchBench;
       })
       .sort((a, b) => {
         let va: any, vb: any;
@@ -189,6 +191,10 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     return this.allEmployees.filter(e => this.getActiveProjectCount(e) > this.WORKLOAD_THRESHOLD).length;
   }
 
+  get benchCount(): number {
+    return this.allEmployees.filter(e => this.getActiveProjectCount(e) === 0).length;
+  }
+
   // ─── Onboarding checklist ────────────────────────────────────
   private loadChecklist(): void {
     try {
@@ -230,6 +236,36 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
   }
 
   // ─── Helpers ─────────────────────────────────────────────────
+  /** Tính thâm niên từ ngày vào làm đến hiện tại */
+  getTenure(joinDate: string): string {
+    if (!joinDate) return '';
+    let date: Date | null = null;
+    const dmy = joinDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dmy) date = new Date(+dmy[3], +dmy[2] - 1, +dmy[1]);
+    else {
+      const ymd = joinDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (ymd) date = new Date(+ymd[1], +ymd[2] - 1, +ymd[3]);
+    }
+    if (!date || isNaN(date.getTime())) return '';
+    const now = new Date();
+    let years = now.getFullYear() - date.getFullYear();
+    let months = now.getMonth() - date.getMonth();
+    if (months < 0) { years--; months += 12; }
+    if (years === 0 && months === 0) return 'Mới vào';
+    const parts: string[] = [];
+    if (years > 0) parts.push(`${years} năm`);
+    if (months > 0) parts.push(`${months} tháng`);
+    return parts.join(' ');
+  }
+
+  /** Gợi ý mã NV tiếp theo theo dạng NV001, NV002... */
+  private suggestNextEmployeeId(): string {
+    const max = this.allEmployees
+      .map(e => { const m = e.id?.match(/^NV(\d+)$/i); return m ? +m[1] : 0; })
+      .reduce((a, b) => Math.max(a, b), 0);
+    return max > 0 ? `NV${String(max + 1).padStart(3, '0')}` : '';
+  }
+
   getManagerName(managerId: string | null): string {
     if (!managerId) return '—';
     const mgr = this.allEmployees.find(e => e.id === managerId);
@@ -270,7 +306,7 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
   onSearch(): void { this.page = 0; }
 
   get hasActiveFilters(): boolean {
-    return this.searchQuery !== '' || this.deptFilter !== 'all' || this.levelFilter !== 'all' || this.showOnlyOverloaded;
+    return this.searchQuery !== '' || this.deptFilter !== 'all' || this.levelFilter !== 'all' || this.showOnlyOverloaded || this.showOnlyBench;
   }
 
   clearFilters(): void {
@@ -278,6 +314,7 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     this.deptFilter         = 'all';
     this.levelFilter        = 'all';
     this.showOnlyOverloaded = false;
+    this.showOnlyBench      = false;
     this.page               = 0;
   }
 
@@ -313,7 +350,7 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
 
   openCreate(): void {
     this.selectedEmployee = null;
-    this.form = { id: '', name: '', position: '', department: '', email: '', phone: '', managerId: null, joinDate: '', projects: [] };
+    this.form = { id: this.suggestNextEmployeeId(), name: '', position: '', department: '', email: '', phone: '', managerId: null, joinDate: '', projects: [] };
     this.formErrors = {};
     this.showAddProject = false;
     this.panelMode = 'create';
