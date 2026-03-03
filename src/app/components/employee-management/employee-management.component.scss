@@ -82,6 +82,12 @@
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
+.em-export-pdf-btn {
+  border-color: #ef4444;
+  color: #dc2626;
+  &:hover:not(:disabled) { background: #fee2e2; }
+}
+
 .em-filter-row {
   display: flex;
   align-items: center;
@@ -1066,6 +1072,7 @@
   .em-header-top h2 { color: #f1f5f9; }
 
   .em-export-btn { border-color: #4ade80; color: #4ade80; &:hover:not(:disabled) { background: #14532d; } }
+  .em-export-pdf-btn { border-color: #f87171; color: #f87171; &:hover:not(:disabled) { background: #450a0a; } }
 
   .em-search-input {
     background: #0f172a; border-color: transparent;

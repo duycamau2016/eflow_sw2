@@ -13,6 +13,11 @@
             <mat-icon>{{ isExporting ? 'hourglass_top' : 'download' }}</mat-icon>
             <span>{{ isExporting ? '...' : 'Excel' }}</span>
           </button>
+          <button class="em-export-pdf-btn em-export-btn" (click)="exportEmployeesPdf()" [disabled]="isExportingPdf || allEmployees.length === 0"
+            [title]="hasActiveFilters ? 'Xuất PDF ' + filteredEmployees.length + ' nhân viên (đang lọc)' : 'Xuất toàn bộ nhân viên ra PDF'">
+            <mat-icon>{{ isExportingPdf ? 'hourglass_top' : 'picture_as_pdf' }}</mat-icon>
+            <span>{{ isExportingPdf ? '...' : 'PDF' }}</span>
+          </button>
           <button mat-flat-button color="primary" class="em-add-btn" (click)="openCreate()" *ngIf="isAdmin">
             <mat-icon>person_add</mat-icon> Thêm nhân viên
           </button>
@@ -391,7 +396,7 @@
                     [attr.list]="'dept-list-' + panelMode"
                     placeholder="Chọn hoặc nhập phòng ban" />
                   <datalist [id]="'dept-list-' + panelMode">
-                    <option *ngFor="let d of departments" [value]="d"></option>
+                    <option *ngFor="let d of deptList" [value]="d"></option>
                   </datalist>
                   <span class="em-field-error" *ngIf="formErrors['department']">{{ formErrors['department'] }}</span>
                 </div>

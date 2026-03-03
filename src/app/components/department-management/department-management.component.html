@@ -1,0 +1,162 @@
+<div class="dm-root">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <div class="dm-header">
+    <div class="dm-title">
+      <mat-icon>corporate_fare</mat-icon>
+      <h2>Quản lý Phòng ban</h2>
+    </div>
+    <div class="dm-stats">
+      <span class="dm-stat"><mat-icon>corporate_fare</mat-icon>{{ totalDepts }} phòng ban</span>
+      <span class="dm-stat"><mat-icon>people</mat-icon>{{ totalEmployees }} nhân viên</span>
+      <span class="dm-stat dm-stat-warn" *ngIf="emptyDepts > 0">
+        <mat-icon>warning</mat-icon>{{ emptyDepts }} trống
+      </span>
+    </div>
+  </div>
+
+  <!-- ── Add form (admin only) ──────────────────────────────────── -->
+  <div class="dm-add-bar" *ngIf="isAdmin">
+    <div class="dm-add-input-wrap">
+      <mat-icon>add_business</mat-icon>
+      <input
+        type="text"
+        class="dm-add-input"
+        placeholder="Tên phòng ban mới..."
+        [(ngModel)]="newDeptName"
+        (keydown.enter)="addDept()"
+        maxlength="80"
+      />
+      <span class="dm-add-error" *ngIf="newDeptError">{{ newDeptError }}</span>
+    </div>
+    <button class="dm-btn dm-btn-primary" (click)="addDept()" [disabled]="!newDeptName.trim()">
+      <mat-icon>add</mat-icon> Thêm
+    </button>
+  </div>
+
+  <!-- ── Table ──────────────────────────────────────────────────── -->
+  <div class="dm-table-wrap">
+    <table class="dm-table">
+      <thead>
+        <tr>
+          <th class="col-idx">#</th>
+          <th class="col-name th-sortable" (click)="sort('name')">
+            Tên phòng ban
+            <mat-icon class="sort-icon" *ngIf="sortCol === 'name'">{{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            <mat-icon class="sort-icon sort-inactive" *ngIf="sortCol !== 'name'">unfold_more</mat-icon>
+          </th>
+          <th class="col-count th-sortable" (click)="sort('count')">
+            Nhân viên
+            <mat-icon class="sort-icon" *ngIf="sortCol === 'count'">{{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            <mat-icon class="sort-icon sort-inactive" *ngIf="sortCol !== 'count'">unfold_more</mat-icon>
+          </th>
+          <th class="col-bar">Tỉ lệ</th>
+          <th class="col-actions" *ngIf="isAdmin">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let row of pagedRows; let i = index"
+          [class.dm-row-empty]="row.count === 0"
+          [class.dm-row-deleting]="deleteConfirmName === row.name"
+        >
+          <td class="col-idx">{{ page * pageSize + i + 1 }}</td>
+
+          <!-- Name cell — normal / editing -->
+          <td class="col-name">
+            <div class="dm-name-view" *ngIf="!row.editing">
+              <mat-icon class="dm-dept-icon">folder</mat-icon>
+              <span>{{ row.name }}</span>
+              <span class="dm-empty-badge" *ngIf="row.count === 0">trống</span>
+            </div>
+            <div class="dm-name-edit" *ngIf="row.editing">
+              <input
+                type="text"
+                class="dm-edit-input"
+                [(ngModel)]="row.editValue"
+                (keydown.enter)="saveEdit(row)"
+                (keydown.escape)="cancelEdit(row)"
+                maxlength="80"
+                autofocus
+              />
+              <button class="dm-icon-btn dm-btn-save" (click)="saveEdit(row)" title="Lưu">
+                <mat-icon>check</mat-icon>
+              </button>
+              <button class="dm-icon-btn dm-btn-cancel" (click)="cancelEdit(row)" title="Hủy">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </td>
+
+          <!-- Count -->
+          <td class="col-count">
+            <span class="dm-count-badge" [class.dm-count-zero]="row.count === 0">{{ row.count }}</span>
+          </td>
+
+          <!-- Bar -->
+          <td class="col-bar">
+            <div class="dm-bar-track" *ngIf="totalEmployees > 0">
+              <div
+                class="dm-bar-fill"
+                [style.width.%]="(row.count / totalEmployees) * 100"
+                [title]="((row.count / totalEmployees) * 100 | number:'1.0-1') + '%'"
+              ></div>
+            </div>
+            <span class="dm-bar-pct" *ngIf="totalEmployees > 0">
+              {{ (row.count / totalEmployees) * 100 | number:'1.0-1' }}%
+            </span>
+          </td>
+
+          <!-- Actions -->
+          <td class="col-actions" *ngIf="isAdmin">
+            <!-- Normal state -->
+            <ng-container *ngIf="deleteConfirmName !== row.name && !row.editing">
+              <button class="dm-icon-btn dm-btn-edit" (click)="startEdit(row)" title="Đổi tên">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button class="dm-icon-btn dm-btn-delete" (click)="requestDelete(row.name)" title="Xóa">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </ng-container>
+            <!-- Delete confirm -->
+            <ng-container *ngIf="deleteConfirmName === row.name">
+              <span class="dm-delete-warn">
+                <mat-icon>warning</mat-icon>
+                {{ row.count > 0 ? row.count + ' NV vẫn thuộc PB này.' : 'Xác nhận xóa?' }}
+              </span>
+              <button class="dm-btn dm-btn-danger-sm" (click)="confirmDelete(row.name)">Xóa</button>
+              <button class="dm-btn dm-btn-ghost-sm" (click)="cancelDelete()">Hủy</button>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="dm-empty" *ngIf="rows.length === 0">
+      <mat-icon>inbox</mat-icon>
+      <p>Chưa có phòng ban nào. Thêm phòng ban đầu tiên!</p>
+    </div>
+  </div>
+  <!-- ── Pagination ───────────────────────────────────────────────────── -->
+  <div class="dm-pagination" *ngIf="totalPages > 1">
+    <span class="dm-pag-info">{{ page * pageSize + 1 }}–{{ paginationEnd }} / {{ rows.length }} phòng ban</span>
+    <div class="dm-pag-btns">
+      <button class="dm-pag-btn" (click)="page = 0" [disabled]="page === 0"><mat-icon>first_page</mat-icon></button>
+      <button class="dm-pag-btn" (click)="page = page - 1" [disabled]="page === 0"><mat-icon>chevron_left</mat-icon></button>
+      <button
+        class="dm-pag-page-btn"
+        *ngFor="let p of pageNumbers"
+        [class.active]="p === page"
+        (click)="page = p"
+      >{{ p + 1 }}</button>
+      <button class="dm-pag-btn" (click)="page = page + 1" [disabled]="page === totalPages - 1"><mat-icon>chevron_right</mat-icon></button>
+      <button class="dm-pag-btn" (click)="page = totalPages - 1" [disabled]="page === totalPages - 1"><mat-icon>last_page</mat-icon></button>
+    </div>
+  </div>
+  <!-- ── Info note ─────────────────────────────────────────────── -->
+  <div class="dm-note">
+    <mat-icon>info_outline</mat-icon>
+    <span>Danh sách phòng ban được lưu tại máy (localStorage). Tên phòng ban dùng khi tạo/sửa nhân viên.</span>
+  </div>
+
+</div>

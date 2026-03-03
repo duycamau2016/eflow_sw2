@@ -82,6 +82,12 @@ export interface ProjectPhaseApiDTO {
   sortOrder: number;
 }
 
+export interface DepartmentApiDTO {
+  id: number;
+  name: string;
+  sortOrder: number;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -346,5 +352,42 @@ export class EFlowApiService {
     return this.http
       .delete<ApiResponse<void>>(`${this.base}/project-phases/${id}`)
       .pipe(map(() => void 0));
+  }
+
+  // ─── Departments ─────────────────────────────────────────────────────────
+
+  /** GET /api/departments */
+  getAllDepartments(): Observable<DepartmentApiDTO[]> {
+    return this.http
+      .get<ApiResponse<DepartmentApiDTO[]>>(`${this.base}/departments`)
+      .pipe(map(r => r.data ?? []));
+  }
+
+  /** POST /api/departments */
+  createDepartment(name: string): Observable<DepartmentApiDTO> {
+    return this.http
+      .post<ApiResponse<DepartmentApiDTO>>(`${this.base}/departments`, { name })
+      .pipe(map(r => r.data));
+  }
+
+  /** PUT /api/departments/{id} — đổi tên */
+  renameDepartment(id: number, newName: string): Observable<DepartmentApiDTO> {
+    return this.http
+      .put<ApiResponse<DepartmentApiDTO>>(`${this.base}/departments/${id}`, { name: newName })
+      .pipe(map(r => r.data));
+  }
+
+  /** DELETE /api/departments/{id} */
+  deleteDepartment(id: number): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(`${this.base}/departments/${id}`)
+      .pipe(map(() => void 0));
+  }
+
+  /** POST /api/departments/seed — thêm phòng ban còn thiếu từ danh sách nhân viên */
+  seedDepartments(names: string[]): Observable<DepartmentApiDTO[]> {
+    return this.http
+      .post<ApiResponse<DepartmentApiDTO[]>>(`${this.base}/departments/seed`, names)
+      .pipe(map(r => r.data ?? []));
   }
 }

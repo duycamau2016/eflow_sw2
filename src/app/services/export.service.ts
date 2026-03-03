@@ -125,6 +125,88 @@ export class ExportService {
   }
 
   // -------------------------------------------------------
+  // Xuất PDF: bảng danh sách nhân viên (jsPDF manual)
+  // -------------------------------------------------------
+  async exportEmployeesPdf(employees: Employee[], filename = 'danh_sach_nhan_su'): Promise<void> {
+    const { jsPDF } = await import('jspdf');
+
+    const cols = ['Ma NV', 'Ho va ten', 'Chuc vu', 'Phong ban', 'Cap bac', 'Ngay vao lam'];
+    const colW = [22, 48, 40, 38, 18, 30];
+    const rowH  = 8;
+    const marginX = 10;
+    const pageW = 297; // A4 landscape
+    const pageH = 210;
+
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    // --- Title ---
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.setTextColor(63, 81, 181);
+    pdf.text('DANH SACH NHAN SU', pageW / 2, 10, { align: 'center' });
+
+    // --- Sub info ---
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(
+      `Tong: ${employees.length} nguoi  |  Ngay xuat: ${new Date().toLocaleDateString('vi-VN')}`,
+      pageW / 2, 16, { align: 'center' }
+    );
+
+    // --- Draw table ---
+    const drawRow = (y: number, cells: string[], isHeader: boolean): void => {
+      let x = marginX;
+      pdf.setFontSize(isHeader ? 8 : 7.5);
+      pdf.setFont('helvetica', isHeader ? 'bold' : 'normal');
+      pdf.setTextColor(isHeader ? 255 : 30, isHeader ? 255 : 30, isHeader ? 255 : 30);
+      pdf.setFillColor(isHeader ? 63 : (cells[0] === '_alt' ? 245 : 255),
+                       isHeader ? 81 : (cells[0] === '_alt' ? 247 : 255),
+                       isHeader ? 181 : (cells[0] === '_alt' ? 250 : 255));
+      pdf.rect(marginX, y, colW.reduce((a, b) => a + b, 0), rowH, 'F');
+      cells.forEach((cell, i) => {
+        const txt = cell === '_alt' ? '' : cell;
+        pdf.text(txt.length > 22 ? txt.substring(0, 21) + '…' : txt, x + 1.5, y + 5.5);
+        x += colW[i];
+      });
+      // border line
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(marginX, y + rowH, marginX + colW.reduce((a, b) => a + b, 0), y + rowH);
+    };
+
+    let y = 22;
+    drawRow(y, cols, true);
+    y += rowH;
+
+    employees.forEach((e, idx) => {
+      if (y + rowH > pageH - 10) {
+        pdf.addPage();
+        y = 10;
+        drawRow(y, cols, true);
+        y += rowH;
+      }
+      const alt = idx % 2 === 1 ? '_alt' : '';
+      const cells = [
+        alt || e.id,
+        alt || e.name,
+        alt || (e.position || ''),
+        alt || (e.department || ''),
+        alt || `Cap ${(e.level ?? 0) + 1}`,
+        alt || (e.joinDate || '')
+      ];
+      drawRow(y, cells, false);
+      y += rowH;
+    });
+
+    // --- Footer ---
+    pdf.setFontSize(7);
+    pdf.setTextColor(180, 180, 180);
+    pdf.text('eFlow SW2', pageW / 2, pageH - 4, { align: 'center' });
+
+    pdf.save(`${filename}_${this.dateStamp()}.pdf`);
+  }
+
+  // -------------------------------------------------------
   // Xuất PDF: chụp DOM element bằng html2canvas → jsPDF
   // -------------------------------------------------------
   async exportPdf(

@@ -187,6 +187,19 @@
         <span class="nav-label">Nhân sự</span>
       </button>
 
+      <!-- Phòng ban -->
+      <button
+        class="nav-item"
+        [class.active]="activeMenu === 'departments'"
+        (click)="selectMenu('departments')"
+        matTooltip="Quản lý phòng ban"
+        matTooltipPosition="right"
+        aria-label="Quản lý phòng ban"
+      >
+        <mat-icon>corporate_fare</mat-icon>
+        <span class="nav-label">Phòng ban</span>
+      </button>
+
       <!-- Xóa dữ liệu -->
       <button
         class="nav-item nav-item-danger"
@@ -315,6 +328,14 @@
           [isAdmin]="isAdmin"
           (navigateToProject)="onNavigateToProject($event)"
         ></app-employee-management>
+      </div>
+
+      <!-- Department Management -->
+      <div class="chart-section" *ngIf="activeMenu === 'departments'">
+        <app-department-management
+          [allEmployees]="allEmployees"
+          [isAdmin]="isAdmin"
+        ></app-department-management>
       </div>
 
     </div>

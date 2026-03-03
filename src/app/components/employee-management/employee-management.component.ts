@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange
 import { Employee, Project } from '../../models/employee.model';
 import { ExcelImportService } from '../../services/excel-import.service';
 import { ExportService } from '../../services/export.service';
+import { DepartmentService } from '../../services/department.service';
 
 export type PanelMode = 'closed' | 'view' | 'edit' | 'create';
 
@@ -61,7 +62,11 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
   // ─── Loading state ───────────────────────────────────────────
   isSaving     = false;
   deletingId: string | null = null;
-  isExporting  = false;
+  isExporting    = false;
+  isExportingPdf = false;
+
+  // ─── Department list (for form datalist) ───────────────────
+  deptList: string[] = []; // các tên phòng ban (map từ DepartmentApiDTO[].name)
   // ─── Form ─────────────────────────────────────────────────
   form: Partial<Employee> = {};
   formErrors: Record<string, string> = {};
@@ -75,8 +80,11 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
 
   constructor(
     private excelService: ExcelImportService,
-    private exportService: ExportService
-  ) {}
+    private exportService: ExportService,
+    public deptService: DepartmentService
+  ) {
+    this.deptService.depts$.subscribe(list => { this.deptList = list.map(d => d.name); });
+  }
 
   ngOnInit(): void { this.loadChecklist(); }
 
@@ -84,6 +92,9 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     if (changes['allEmployees']) {
       this.page = 0;
       this.rebuildDeptOptions();
+      // Seed dept service với depts từ dữ liệu nhân viên (chỉ lần đầu)
+      const empDepts = this.allEmployees.map(e => e.department).filter(Boolean) as string[];
+      this.deptService.seedFromEmployees(empDepts);
     }
   }
 
@@ -324,8 +335,8 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
     this.page               = 0;
   }
 
+  // ─── Export ──────────────────────────────────────────────────
   exportEmployees(): void {
-    if (this.isExporting) return;
     this.isExporting = true;
     const list = this.filteredEmployees;
     const label = this.hasActiveFilters ? `nhan_su_filter_${list.length}` : 'nhan_su_tat_ca';
@@ -333,6 +344,18 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
       this.exportService.exportExcel(list, label);
     } finally {
       this.isExporting = false;
+    }
+  }
+
+  async exportEmployeesPdf(): Promise<void> {
+    if (this.isExportingPdf) return;
+    this.isExportingPdf = true;
+    const list = this.filteredEmployees;
+    const label = this.hasActiveFilters ? `nhan_su_filter_${list.length}` : 'nhan_su_tat_ca';
+    try {
+      await this.exportService.exportEmployeesPdf(list, label);
+    } finally {
+      this.isExportingPdf = false;
     }
   }
 

@@ -5,7 +5,7 @@ import { ExcelImportService } from './services/excel-import.service';
 import { AuthService } from './services/auth.service';
 import { LoginComponent } from './components/login/login.component';
 
-type ActiveMenu = 'dashboard' | 'orgchart' | 'projects' | 'employees' | 'import' | 'none';
+type ActiveMenu = 'dashboard' | 'orgchart' | 'projects' | 'employees' | 'departments' | 'import' | 'none';
 
 @Component({
   selector: 'app-root',
@@ -153,6 +153,9 @@ export class AppComponent {
       this.loadSampleData();
     }
     if (menu === 'employees' && !this.hasData) {
+      this.loadSampleData();
+    }
+    if (menu === 'departments' && !this.hasData) {
       this.loadSampleData();
     }
   }
