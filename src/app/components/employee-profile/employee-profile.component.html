@@ -1,0 +1,133 @@
+<div class="ep-root" *ngIf="employee">
+
+  <!-- ─── Hero card ─────────────────────────────────────────── -->
+  <div class="ep-hero">
+    <div class="ep-avatar">
+      <img *ngIf="employee.avatar" [src]="employee.avatar" [alt]="employee.name" class="ep-avatar-img">
+      <div *ngIf="!employee.avatar" class="ep-avatar-initials">{{ avatarInitials(employee.name) }}</div>
+    </div>
+
+    <div class="ep-hero-info">
+      <h2 class="ep-name">{{ employee.name }}</h2>
+      <p class="ep-position">{{ employee.position }}</p>
+      <div class="ep-chips">
+        <span class="ep-chip ep-chip-dept">
+          <mat-icon>corporate_fare</mat-icon>{{ employee.department || '—' }}
+        </span>
+        <span class="ep-chip ep-chip-level">
+          <mat-icon>layers</mat-icon>{{ levelLabel(employee.level) }}
+        </span>
+        <span class="ep-chip ep-chip-tenure" *ngIf="employee.joinDate">
+          <mat-icon>calendar_today</mat-icon>{{ tenureLabel(employee.joinDate) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="ep-contact">
+      <div class="ep-contact-item" *ngIf="employee.email">
+        <mat-icon>email</mat-icon><span>{{ employee.email }}</span>
+      </div>
+      <div class="ep-contact-item" *ngIf="employee.phone">
+        <mat-icon>phone</mat-icon><span>{{ employee.phone }}</span>
+      </div>
+      <div class="ep-contact-item">
+        <mat-icon>badge</mat-icon><span>Mã NV: {{ employee.id }}</span>
+      </div>
+      <div class="ep-contact-item">
+        <mat-icon>event</mat-icon><span>Ngày vào làm: {{ formatDate(employee.joinDate) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Manager & subordinates row ──────────────────────────── -->
+  <div class="ep-row-two">
+
+    <!-- Manager -->
+    <div class="ep-card">
+      <div class="ep-card-header">
+        <mat-icon>manage_accounts</mat-icon>
+        <span>Quản lý trực tiếp</span>
+      </div>
+      <div class="ep-manager" *ngIf="manager; else noManager">
+        <div class="ep-mini-avatar">{{ avatarInitials(manager.name) }}</div>
+        <div>
+          <div class="ep-mini-name">{{ manager.name }}</div>
+          <div class="ep-mini-sub">{{ manager.position }} · {{ manager.department }}</div>
+        </div>
+      </div>
+      <ng-template #noManager>
+        <p class="ep-none-text">Không có quản lý (node gốc)</p>
+      </ng-template>
+    </div>
+
+    <!-- Subordinates -->
+    <div class="ep-card ep-card-grow">
+      <div class="ep-card-header">
+        <mat-icon>people</mat-icon>
+        <span>Cấp dưới trực tiếp ({{ subordinates.length }})</span>
+      </div>
+      <div class="ep-subordinates" *ngIf="subordinates.length; else noSub">
+        <div class="ep-sub-item" *ngFor="let s of subordinates">
+          <div class="ep-mini-avatar ep-mini-avatar-sm">{{ avatarInitials(s.name) }}</div>
+          <div>
+            <div class="ep-mini-name">{{ s.name }}</div>
+            <div class="ep-mini-sub">{{ s.position }}</div>
+          </div>
+        </div>
+      </div>
+      <ng-template #noSub>
+        <p class="ep-none-text">Không có cấp dưới</p>
+      </ng-template>
+    </div>
+
+  </div>
+
+  <!-- ─── Projects timeline ────────────────────────────────────── -->
+  <div class="ep-card">
+    <div class="ep-card-header">
+      <mat-icon>work</mat-icon>
+      <span>Dự án đang tham gia ({{ activeProjects.length }})</span>
+    </div>
+    <div class="ep-proj-list" *ngIf="activeProjects.length; else noActive">
+      <div class="ep-proj-item" *ngFor="let p of activeProjects">
+        <div class="ep-proj-dot ep-proj-dot--active"></div>
+        <div class="ep-proj-content">
+          <div class="ep-proj-name">{{ p.name }}</div>
+          <div class="ep-proj-meta">
+            <span class="ep-proj-role"><mat-icon>person_pin</mat-icon>{{ p.role || 'Thành viên' }}</span>
+            <span class="ep-proj-date" *ngIf="p.startDate">
+              <mat-icon>date_range</mat-icon>{{ formatDate(p.startDate) }} — {{ p.endDate ? formatDate(p.endDate) : 'Hiện tại' }}
+            </span>
+            <span class="ep-proj-status" [ngClass]="statusClass(p.status)">{{ statusLabel(p.status) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ng-template #noActive>
+      <p class="ep-none-text">Không có dự án đang thực hiện</p>
+    </ng-template>
+  </div>
+
+  <div class="ep-card" *ngIf="pastProjects.length">
+    <div class="ep-card-header">
+      <mat-icon>history</mat-icon>
+      <span>Dự án đã kết thúc ({{ pastProjects.length }})</span>
+    </div>
+    <div class="ep-proj-list ep-proj-list--past">
+      <div class="ep-proj-item" *ngFor="let p of pastProjects">
+        <div class="ep-proj-dot ep-proj-dot--past"></div>
+        <div class="ep-proj-content">
+          <div class="ep-proj-name">{{ p.name }}</div>
+          <div class="ep-proj-meta">
+            <span class="ep-proj-role"><mat-icon>person_pin</mat-icon>{{ p.role || 'Thành viên' }}</span>
+            <span class="ep-proj-date" *ngIf="p.startDate">
+              <mat-icon>date_range</mat-icon>{{ formatDate(p.startDate) }} — {{ p.endDate ? formatDate(p.endDate) : '—' }}
+            </span>
+            <span class="ep-proj-status" [ngClass]="statusClass(p.status)">{{ statusLabel(p.status) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

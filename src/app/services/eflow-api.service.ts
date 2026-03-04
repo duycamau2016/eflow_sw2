@@ -88,6 +88,22 @@ export interface DepartmentApiDTO {
   sortOrder: number;
 }
 
+export interface AuditLogApiDTO {
+  id: number;
+  action: string;         // CREATE | UPDATE | DELETE | IMPORT
+  entityType: string;     // EMPLOYEE | PROJECT | DEPARTMENT
+  entityId: string | null;
+  entityName: string | null;
+  actor: string;
+  createdAt: string;      // ISO datetime
+  detail: string | null;
+}
+
+export interface AuditLogPage {
+  data: AuditLogApiDTO[];
+  total: number;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -390,4 +406,26 @@ export class EFlowApiService {
       .post<ApiResponse<DepartmentApiDTO[]>>(`${this.base}/departments/seed`, names)
       .pipe(map(r => r.data ?? []));
   }
+
+  // ─── Audit Log ────────────────────────────────────────────────────────────
+
+  /** GET /api/audit-logs — lịch sử thay đổi */
+  getAuditLogs(params: {
+    entityType?: string;
+    action?: string;
+    actor?: string;
+    page?: number;
+    size?: number;
+  } = {}): Observable<AuditLogPage> {
+    let p = new HttpParams();
+    if (params.entityType) p = p.set('entityType', params.entityType);
+    if (params.action)     p = p.set('action',     params.action);
+    if (params.actor)      p = p.set('actor',      params.actor);
+    if (params.page  != null) p = p.set('page',  String(params.page));
+    if (params.size  != null) p = p.set('size',  String(params.size));
+    return this.http
+      .get<ApiResponse<AuditLogApiDTO[]>>(`${this.base}/audit-logs`, { params: p })
+      .pipe(map(r => ({ data: r.data ?? [], total: r.total ?? 0 })));
+  }
 }
+

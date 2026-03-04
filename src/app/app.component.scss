@@ -201,6 +201,12 @@
       mat-icon { font-size: 17px; width: 17px; height: 17px; display: flex; align-items: center; justify-content: center; }
       &:hover { opacity: 1; }
     }
+
+    &.user-chip--manager {
+      background: rgba(251, 191, 36, 0.18);
+      border-color: rgba(251, 191, 36, 0.45);
+      > mat-icon { color: #fbbf24; }
+    }
   }
 }
 

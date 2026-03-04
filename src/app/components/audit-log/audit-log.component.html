@@ -1,0 +1,111 @@
+<div class="al-root">
+
+  <!-- Header -->
+  <div class="al-header">
+    <div class="al-title">
+      <mat-icon>history</mat-icon>
+      <h2>Lịch sử thay đổi</h2>
+    </div>
+    <div class="al-total-chip">
+      <mat-icon>format_list_numbered</mat-icon>
+      {{ total }} bản ghi
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="al-filters">
+    <!-- Loại đối tượng -->
+    <select class="al-select" [(ngModel)]="filterEntityType" (change)="onEntityTypeChange()">
+      <option *ngFor="let o of entityTypeOptions" [value]="o.value">{{ o.label }}</option>
+    </select>
+
+    <!-- Thao tác -->
+    <select class="al-select" [(ngModel)]="filterAction" (change)="onActionChange()">
+      <option *ngFor="let o of actionOptions" [value]="o.value">{{ o.label }}</option>
+    </select>
+
+    <!-- Người thực hiện -->
+    <div class="al-search-wrap">
+      <mat-icon class="al-search-icon">person_search</mat-icon>
+      <input
+        class="al-search-input"
+        type="text"
+        placeholder="Tìm theo tên người dùng..."
+        [(ngModel)]="filterActor"
+        (input)="onActorInput()"
+      />
+      <mat-icon class="al-clear-icon" *ngIf="filterActor" (click)="filterActor=''; onActorInput()">close</mat-icon>
+    </div>
+
+    <!-- Reset -->
+    <button class="al-reset-btn" *ngIf="hasFilters" (click)="resetFilters()">
+      <mat-icon>filter_alt_off</mat-icon>
+      Bỏ lọc
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="al-loading" *ngIf="isLoading">
+    <mat-spinner diameter="36"></mat-spinner>
+    <span>Đang tải...</span>
+  </div>
+
+  <!-- Table -->
+  <div class="al-table-wrap" *ngIf="!isLoading">
+    <table class="al-table" *ngIf="logs.length; else emptyTpl">
+      <thead>
+        <tr>
+          <th class="col-time">Thời gian</th>
+          <th class="col-actor">Người thực hiện</th>
+          <th class="col-action">Thao tác</th>
+          <th class="col-type">Loại</th>
+          <th class="col-name">Tên đối tượng</th>
+          <th class="col-detail">Chi tiết</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let log of logs">
+          <td class="col-time">{{ formatDate(log.createdAt) }}</td>
+          <td class="col-actor">
+            <span class="al-actor-chip">
+              <mat-icon>person</mat-icon>{{ log.actor }}
+            </span>
+          </td>
+          <td class="col-action">
+            <span class="al-badge" [ngClass]="actionClass(log.action)">
+              {{ actionLabel(log.action) }}
+            </span>
+          </td>
+          <td class="col-type">{{ entityLabel(log.entityType) }}</td>
+          <td class="col-name">{{ log.entityName || log.entityId || '—' }}</td>
+          <td class="col-detail">{{ log.detail || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyTpl>
+      <div class="al-empty">
+        <mat-icon>manage_search</mat-icon>
+        <p>Không có bản ghi nào{{ hasFilters ? ' khớp với bộ lọc' : '' }}</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Pagination -->
+  <div class="al-pagination" *ngIf="!isLoading && totalPages > 1">
+    <button class="al-page-btn" [disabled]="page === 0" (click)="goTo(0)">
+      <mat-icon>first_page</mat-icon>
+    </button>
+    <button class="al-page-btn" [disabled]="page === 0" (click)="goTo(page - 1)">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="al-page-info">Trang {{ page + 1 }} / {{ totalPages }}</span>
+    <button class="al-page-btn" [disabled]="page >= totalPages - 1" (click)="goTo(page + 1)">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button class="al-page-btn" [disabled]="page >= totalPages - 1" (click)="goTo(totalPages - 1)">
+      <mat-icon>last_page</mat-icon>
+    </button>
+  </div>
+
+</div>

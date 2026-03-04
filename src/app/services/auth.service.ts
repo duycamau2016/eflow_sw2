@@ -4,15 +4,18 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface AuthUser {
-  username: string;
-  role: string;
+  username:   string;
+  role:       string;
+  /** Phòng ban quản lý — chỉ có với role MANAGER */
+  department: string | null;
 }
 
 interface LoginResponse {
-  success: boolean;
-  username: string;
-  role: string;
-  message: string;
+  success:    boolean;
+  username:   string;
+  role:       string;
+  department: string | null;
+  message:    string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -30,7 +33,11 @@ export class AuthService {
       .pipe(
         tap(res => {
           if (res.success) {
-            const user: AuthUser = { username: res.username, role: res.role };
+            const user: AuthUser = {
+              username:   res.username,
+              role:       res.role,
+              department: res.department ?? null
+            };
             sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
             this.userSubject.next(user);
           }
@@ -55,6 +62,20 @@ export class AuthService {
     return this.isLoggedIn() && this.userSubject.value?.role === 'ADMIN';
   }
 
+  isManager(): boolean {
+    return this.isLoggedIn() && this.userSubject.value?.role === 'MANAGER';
+  }
+
+  /** Admin hoặc Manager đều có quyền chỉnh sửa (ở phạm vi của mình) */
+  canEdit(): boolean {
+    return this.isAdmin() || this.isManager();
+  }
+
+  /** Phòng ban mà Manager được phép quản lý (null với Admin) */
+  get managerDepartment(): string | null {
+    return this.userSubject.value?.department ?? null;
+  }
+
   private loadFromStorage(): AuthUser | null {
     try {
       const stored = sessionStorage.getItem(this.STORAGE_KEY);
@@ -64,3 +85,4 @@ export class AuthService {
     }
   }
 }
+

@@ -5,7 +5,7 @@ import { ExcelImportService } from './services/excel-import.service';
 import { AuthService } from './services/auth.service';
 import { LoginComponent } from './components/login/login.component';
 
-type ActiveMenu = 'dashboard' | 'orgchart' | 'projects' | 'employees' | 'departments' | 'import' | 'none';
+type ActiveMenu = 'dashboard' | 'orgchart' | 'projects' | 'employees' | 'departments' | 'audit-log' | 'import' | 'none';
 
 @Component({
   selector: 'app-root',
@@ -67,6 +67,10 @@ export class AppComponent {
 
   get isAdmin(): boolean {
     return this.authService.isAdmin();
+  }
+
+  get isManager(): boolean {
+    return this.authService.isManager();
   }
 
   openLogin(): void {

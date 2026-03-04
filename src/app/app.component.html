@@ -90,12 +90,19 @@
       </button>
 
       <!-- Login / Logout -->
-      <button mat-stroked-button class="login-btn" (click)="openLogin()" *ngIf="!isAdmin" matTooltip="Đăng nhập để chỉnh sửa dữ liệu">
+      <button mat-stroked-button class="login-btn" (click)="openLogin()" *ngIf="!isAdmin && !isManager" matTooltip="Đăng nhập để chỉnh sửa dữ liệu">
         <mat-icon>lock</mat-icon>
         Đăng nhập
       </button>
       <div class="user-chip" *ngIf="isAdmin">
         <mat-icon>admin_panel_settings</mat-icon>
+        <span>{{ authService.currentUser?.username }}</span>
+        <button mat-icon-button (click)="logout()" matTooltip="Đăng xuất" class="logout-btn">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </div>
+      <div class="user-chip user-chip--manager" *ngIf="isManager && !isAdmin">
+        <mat-icon>badge</mat-icon>
         <span>{{ authService.currentUser?.username }}</span>
         <button mat-icon-button (click)="logout()" matTooltip="Đăng xuất" class="logout-btn">
           <mat-icon>logout</mat-icon>
@@ -198,6 +205,20 @@
       >
         <mat-icon>corporate_fare</mat-icon>
         <span class="nav-label">Phòng ban</span>
+      </button>
+
+      <!-- Lịch sử thay đổi (admin only) -->
+      <button
+        class="nav-item"
+        *ngIf="isAdmin"
+        [class.active]="activeMenu === 'audit-log'"
+        (click)="selectMenu('audit-log')"
+        matTooltip="Lịch sử thay đổi"
+        matTooltipPosition="right"
+        aria-label="Lịch sử thay đổi"
+      >
+        <mat-icon>history</mat-icon>
+        <span class="nav-label">Lịch sử</span>
       </button>
 
       <!-- Xóa dữ liệu -->
@@ -336,6 +357,11 @@
           [allEmployees]="allEmployees"
           [isAdmin]="isAdmin"
         ></app-department-management>
+      </div>
+
+      <!-- Audit Log -->
+      <div class="chart-section" *ngIf="isAdmin && activeMenu === 'audit-log'">
+        <app-audit-log [isAdmin]="isAdmin"></app-audit-log>
       </div>
 
     </div>

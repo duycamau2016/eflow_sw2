@@ -3,7 +3,10 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { AuditLogComponent } from './components/audit-log/audit-log.component';
+import { EmployeeProfileComponent } from './components/employee-profile/employee-profile.component';
 
 // Angular Material
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -55,7 +58,9 @@ import { DepartmentManagementComponent } from './components/department-managemen
     FormatDatePipe,
     DateInputComponent,
     DashboardComponent,
-    DepartmentManagementComponent
+    DepartmentManagementComponent,
+    AuditLogComponent,
+    EmployeeProfileComponent
   ],
   imports: [
     BrowserModule,
@@ -85,7 +90,9 @@ import { DepartmentManagementComponent } from './components/department-managemen
     MatNativeDateModule,
     HttpClientModule
   ],
-  providers: [],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+  ],
   bootstrap: [AppComponent],
   entryComponents: [EmployeeDetailComponent, LoginComponent]
 })
