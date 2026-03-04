@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import * as XLSX from 'xlsx';
 import { Employee, Project, ImportResult, OrgNode } from '../models/employee.model';
@@ -376,21 +376,30 @@ export class ExcelImportService {
 
   addEmployee(emp: Employee): Observable<Employee> {
     const dto = this.employeeToDTO(emp);
-    return this.eflowApi.createEmployee(dto).pipe(
+    const doCreate = () => this.eflowApi.createEmployee(dto).pipe(
       map(saved => {
         const result = this.dtoToEmployee(saved);
         const current = [...this.employeesSubject.getValue(), result];
-        const tree = this.buildOrgTree(current);
         this.employeesSubject.next(current);
-        this.orgTreeSubject.next(tree);
+        this.orgTreeSubject.next(this.buildOrgTree(current));
         return result;
-      }),
+      })
+    );
+    return doCreate().pipe(
       catchError(err => {
+        // H2 có thể trống sau restart → sync lại rồi retry
+        if (err?.status === 404 || err?.status === 0) {
+          return this._resyncThenRun<Employee>(doCreate, () => {
+            const current = [...this.employeesSubject.getValue(), emp];
+            this.employeesSubject.next(current);
+            this.orgTreeSubject.next(this.buildOrgTree(current));
+            return of(emp);
+          });
+        }
         console.warn('[eFlow] createEmployee API error, updating local state:', err);
         const current = [...this.employeesSubject.getValue(), emp];
-        const tree = this.buildOrgTree(current);
         this.employeesSubject.next(current);
-        this.orgTreeSubject.next(tree);
+        this.orgTreeSubject.next(this.buildOrgTree(current));
         return of(emp);
       })
     );
@@ -398,33 +407,70 @@ export class ExcelImportService {
 
   updateEmployee(emp: Employee): Observable<Employee> {
     const dto = this.employeeToDTO(emp);
-    return this.eflowApi.updateEmployee(emp.id, dto).pipe(
+    const doUpdate = () => this.eflowApi.updateEmployee(emp.id, dto).pipe(
       map(saved => {
         const result = this.dtoToEmployee(saved);
         const current = this.employeesSubject.getValue().map(e => e.id === result.id ? result : e);
-        const tree = this.buildOrgTree(current);
         this.employeesSubject.next(current);
-        this.orgTreeSubject.next(tree);
+        this.orgTreeSubject.next(this.buildOrgTree(current));
         return result;
-      }),
+      })
+    );
+    return doUpdate().pipe(
       catchError(err => {
+        // H2 trống sau restart → sync toàn bộ data lên H2 rồi retry
+        if (err?.status === 404 || err?.status === 0) {
+          return this._resyncThenRun<Employee>(doUpdate, () => {
+            const current = this.employeesSubject.getValue().map(e => e.id === emp.id ? { ...emp } : e);
+            this.employeesSubject.next(current);
+            this.orgTreeSubject.next(this.buildOrgTree(current));
+            return of(emp);
+          });
+        }
         console.warn('[eFlow] updateEmployee API error, updating local state:', err);
         const current = this.employeesSubject.getValue().map(e => e.id === emp.id ? { ...emp } : e);
-        const tree = this.buildOrgTree(current);
         this.employeesSubject.next(current);
-        this.orgTreeSubject.next(tree);
+        this.orgTreeSubject.next(this.buildOrgTree(current));
         return of(emp);
       })
     );
   }
 
   deleteEmployee(id: string): Observable<void> {
-    return this.eflowApi.deleteEmployee(id).pipe(
-      map(() => { this._removeFromLocalState(id); }),
+    const doDelete = () => this.eflowApi.deleteEmployee(id).pipe(
+      map(() => { this._removeFromLocalState(id); })
+    );
+    return doDelete().pipe(
       catchError(err => {
+        if (err?.status === 404 || err?.status === 0) {
+          return this._resyncThenRun<void>(doDelete, () => {
+            this._removeFromLocalState(id);
+            return of(void 0);
+          });
+        }
         console.warn('[eFlow] deleteEmployee API error, updating local state:', err);
         this._removeFromLocalState(id);
         return of(void 0);
+      })
+    );
+  }
+
+  /**
+   * Khi H2 trống (sau BE restart), tự động bulk-import dữ liệu hiện tại
+   * lên H2 rồi thực hiện lại thao tác gốc. Nếu retry vẫn lỗi, chạy fallback.
+   */
+  private _resyncThenRun<T>(
+    operation: () => Observable<T>,
+    fallback: () => Observable<T>
+  ): Observable<T> {
+    const allEmps = this.employeesSubject.getValue();
+    const dtos = allEmps.map(e => this.employeeToDTO(e));
+    console.log('[eFlow] H2 empty detected — re-syncing', dtos.length, 'employees then retrying...');
+    return this.eflowApi.bulkImport(dtos).pipe(
+      switchMap(() => operation()),
+      catchError(retryErr => {
+        console.warn('[eFlow] Retry after resync failed:', retryErr);
+        return fallback();
       })
     );
   }

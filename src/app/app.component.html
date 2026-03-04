@@ -247,7 +247,7 @@
       <div
         class="import-panel"
         [class.collapsed]="!showImportPanel"
-        *ngIf="!hasData || (activeMenu === 'import' && showImportPanel)"
+        *ngIf="(activeMenu !== 'audit-log') && (!hasData || (activeMenu === 'import' && showImportPanel))"
       >
         <div class="import-panel-header" *ngIf="hasData">
           <h3><mat-icon>upload_file</mat-icon> Import file Excel</h3>

@@ -162,6 +162,7 @@ export class AppComponent {
     if (menu === 'departments' && !this.hasData) {
       this.loadSampleData();
     }
+    // audit-log không cần data từ Excel, chỉ cần API BE
   }
 
   async loadSampleData(): Promise<void> {
