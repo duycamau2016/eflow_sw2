@@ -81,6 +81,61 @@ body.dark-theme {
   color: white;
 }
 
+// ─── Toast Notification (ToastService) ──────────────────────────────────────
+
+.toast-success,
+.toast-error,
+.toast-info,
+.toast-warning {
+  // Override MDC snack-bar container
+  .mdc-snackbar__surface,
+  &.mdc-snackbar__surface {
+    border-radius: 10px !important;
+    min-width: 280px;
+    max-width: 480px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    padding: 0 16px !important;
+  }
+
+  .mdc-snackbar__label {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    padding: 14px 0 !important;
+  }
+
+  .mdc-button__label {
+    font-size: 18px;
+    opacity: 0.8;
+  }
+}
+
+.toast-success .mdc-snackbar__surface {
+  background: #166534 !important;
+  color: #dcfce7 !important;
+}
+
+.toast-error .mdc-snackbar__surface {
+  background: #991b1b !important;
+  color: #fee2e2 !important;
+}
+
+.toast-info .mdc-snackbar__surface {
+  background: #1e3a5f !important;
+  color: #dbeafe !important;
+}
+
+.toast-warning .mdc-snackbar__surface {
+  background: #78350f !important;
+  color: #fef3c7 !important;
+}
+
+// Dismiss button colour matching
+.toast-success .mat-mdc-snack-bar-action { color: #86efac !important; }
+.toast-error   .mat-mdc-snack-bar-action { color: #fca5a5 !important; }
+.toast-info    .mat-mdc-snack-bar-action { color: #93c5fd !important; }
+.toast-warning .mat-mdc-snack-bar-action { color: #fcd34d !important; }
+
 // ─── Global :focus-visible ring ─────────────────────────────────────────────────────
 *:focus { outline: none; }
 *:focus-visible {

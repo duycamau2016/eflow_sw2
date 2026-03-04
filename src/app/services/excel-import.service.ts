@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import * as XLSX from 'xlsx';
@@ -396,6 +396,8 @@ export class ExcelImportService {
             return of(emp);
           });
         }
+        // 403 Forbidden — không được phép tạo: ném lỗi để component xử lý + hiển thị toast
+        if (err?.status === 403) return throwError(() => err);
         console.warn('[eFlow] createEmployee API error, updating local state:', err);
         const current = [...this.employeesSubject.getValue(), emp];
         this.employeesSubject.next(current);
@@ -427,6 +429,8 @@ export class ExcelImportService {
             return of(emp);
           });
         }
+        // 403 Forbidden — Manager không được phép sửa: ném lỗi để component hiển thị toast
+        if (err?.status === 403) return throwError(() => err);
         console.warn('[eFlow] updateEmployee API error, updating local state:', err);
         const current = this.employeesSubject.getValue().map(e => e.id === emp.id ? { ...emp } : e);
         this.employeesSubject.next(current);
@@ -448,6 +452,8 @@ export class ExcelImportService {
             return of(void 0);
           });
         }
+        // 403 Forbidden — Manager không được phép xóa: ném lỗi để component hiển thị toast
+        if (err?.status === 403) return throwError(() => err);
         console.warn('[eFlow] deleteEmployee API error, updating local state:', err);
         this._removeFromLocalState(id);
         return of(void 0);

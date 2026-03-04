@@ -3,6 +3,7 @@ import { Employee, Project } from '../../models/employee.model';
 import { ExcelImportService } from '../../services/excel-import.service';
 import { ExportService } from '../../services/export.service';
 import { DepartmentService } from '../../services/department.service';
+import { ToastService } from '../../services/toast.service';
 
 export type PanelMode = 'closed' | 'view' | 'edit' | 'create';
 
@@ -81,7 +82,8 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
   constructor(
     private excelService: ExcelImportService,
     private exportService: ExportService,
-    public deptService: DepartmentService
+    public deptService: DepartmentService,
+    private toast: ToastService
   ) {
     this.deptService.depts$.subscribe(list => { this.deptList = list.map(d => d.name); });
   }
@@ -453,12 +455,20 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
       avatar:    ''
     };
     this.isSaving = true;
-    const op$ = this.panelMode === 'create'
+    const isCreate = this.panelMode === 'create';
+    const op$ = isCreate
       ? this.excelService.addEmployee(emp)
       : this.excelService.updateEmployee(emp);
     op$.subscribe({
-      next: () => { this.isSaving = false; this.closePanel(); },
-      error: ()  => { this.isSaving = false; }
+      next: () => {
+        this.isSaving = false;
+        this.closePanel();
+        this.toast.success(isCreate ? '✅ Tạo nhân viên thành công' : '✅ Cập nhật nhân viên thành công');
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.toast.error(ToastService.extractMessage(err));
+      }
     });
   }
 
@@ -499,10 +509,12 @@ export class EmployeeManagementComponent implements OnChanges, OnInit {
         if (this.selectedEmployee?.id === id) this.closePanel();
         this.deleteConfirmId = null;
         if (this.page >= this.totalPages) this.page = Math.max(0, this.totalPages - 1);
+        this.toast.success('🗑 Đã xoá nhân viên thành công');
       },
-      error: () => {
+      error: (err) => {
         this.deletingId = null;
         this.deleteConfirmId = null;
+        this.toast.error(ToastService.extractMessage(err));
       }
     });
   }
